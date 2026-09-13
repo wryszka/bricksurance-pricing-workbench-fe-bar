@@ -5,7 +5,6 @@ import {
   ArrowRight, Gauge, Info, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { api } from '../lib/api';
-import { AiModeBadge } from '../components/ui';
 
 /**
  * Conversational motor quote — the direct/broker chatbot surface.
@@ -93,7 +92,6 @@ export default function BrokerChat() {
             Quote assistant
           </span>
           <div className="ml-auto flex items-center gap-4 text-xs text-slate-500">
-            <AiModeBadge theme="light" />
             <Link to="/quote" className="hover:text-slate-800 inline-flex items-center gap-1">
               form journey <ArrowRight className="w-3 h-3" />
             </Link>

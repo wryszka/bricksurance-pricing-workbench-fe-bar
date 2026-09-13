@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Car, ShieldCheck, Loader2, Check, Lock } from 'lucide-react';
 import { api } from '../lib/api';
-import { AiModeBadge } from '../components/ui';
 
 const JOHN = 'POL-MOTOR-00000001';
 
@@ -74,7 +73,6 @@ export default function QuoteSystem() {
           </div>
           <div className="font-bold text-lg tracking-tight">Bricksurance<span className="text-blue-600"> Motor</span></div>
           <div className="ml-auto flex items-center gap-3 text-xs text-slate-500">
-            <AiModeBadge theme="light" />
             <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Secure quote</span>
           </div>
         </div>

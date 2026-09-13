@@ -32,7 +32,11 @@ from server.mcp_tools import (
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/broker", tags=["broker"])
 
-FM_ENDPOINT = "databricks-claude-sonnet-4-6"
+# Haiku 4.5 for the conversational front-end: this is structured field-collection +
+# tool-calling, not deep reasoning, so the fast model is the right fit — it cuts the
+# multi-turn latency a lot vs Sonnet. (The broker chat is inherently LIVE — it is not
+# served from the AI cache, so model speed is what the customer feels.)
+FM_ENDPOINT = "databricks-claude-haiku-4-5"
 MAX_TOOL_HOPS = 6
 
 SYSTEM_PROMPT = """You are the quote assistant for Bricksurance Motor, a UK private-car insurer.
