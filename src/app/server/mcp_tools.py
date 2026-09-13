@@ -266,6 +266,53 @@ def validate(answers: dict[str, Any]) -> tuple[list[str], list[str]]:
             if "max" in q and n > q["max"]:
                 errors.append(f"{f}: {v} is above the maximum {q['max']}")
 
+    # --- Cross-field sanity: reject combinations that cannot exist, no matter
+    #     how each field passes on its own (an agent must not price these). UK
+    #     minimum driving age is 17, so a driver has at most (age - 17) years of
+    #     licence, and no-claims years can never exceed licence years held. ---
+    _MIN_DRIVING_AGE = 17
+
+    def _int(field):
+        val = (answers or {}).get(field)
+        if val is None or str(val) == "":
+            return None
+        try:
+            return int(float(val))
+        except (TypeError, ValueError):
+            return None
+
+    age = _int("driver_age")
+    lic = _int("license_years_held")
+    ncd = _int("no_claims_years")
+    max_driving_years = (age - _MIN_DRIVING_AGE) if age is not None else None
+
+    if age is not None and max_driving_years is not None and max_driving_years < 0:
+        # already caught by min age 17, but keep the message specific
+        errors.append(f"driver_age {age}: below the {_MIN_DRIVING_AGE} minimum driving age — cannot hold a policy")
+    if lic is not None and max_driving_years is not None and lic > max_driving_years:
+        errors.append(
+            f"license_years_held {lic} is impossible at age {age}: a driver can have held a "
+            f"licence for at most {max_driving_years} years (age − {_MIN_DRIVING_AGE}).")
+    if ncd is not None and max_driving_years is not None and ncd > max_driving_years:
+        errors.append(
+            f"no_claims_years {ncd} is impossible at age {age}: no-claims years cannot exceed "
+            f"{max_driving_years} (age − {_MIN_DRIVING_AGE}).")
+    if ncd is not None and lic is not None and ncd > lic:
+        errors.append(
+            f"no_claims_years {ncd} cannot exceed license_years_held {lic} — "
+            f"no-claims discount only accrues while licensed.")
+
+    # Recent claims contradicting a high NCD is a soft inconsistency (protected NCD
+    # exists), so surface it as a WARNING appended to errors with a clear prefix —
+    # not a hard block, but the agent should query it rather than price silently.
+    recent_claims = _int("claim_count_5y")
+    open_claims = _int("open_claims_count")
+    claims_signal = max([c for c in (recent_claims, open_claims) if c is not None], default=None)
+    if ncd is not None and claims_signal is not None and ncd >= 5 and claims_signal >= 3:
+        errors.append(
+            f"WARNING: {ncd} no-claims years with {claims_signal} recent claims is inconsistent "
+            f"unless NCD is protected — confirm before pricing.")
+
     return missing, errors
 
 
