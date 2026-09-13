@@ -82,25 +82,26 @@ LOAD_TEST_JOB_NAME  = "v1 — Live pricing: load test (sustained QPS against sco
 
 
 def _find_job_by_name(name: str) -> int | None:
-    """Exact-match first, then suffix-match — bundle prefixes job names with
-    `[dev whoami]` in the dev target. Sync helper; wrap in asyncio.to_thread."""
+    """Find a bundle-deployed job by name, robust to BOTH the dev bundle's
+    `[dev whoami]` prefix AND the gen2 `(gen2)` suffix. A stale bare-name job can
+    co-exist with the gen2 one on the same workspace, so prefer the `(gen2)` match,
+    then an exact name, then any containing match — never the stale bare-name job by
+    accident (the bug that 500'd Activate: exact-match grabbed the wrong provision
+    job). Sync helper; wrap in asyncio.to_thread."""
     w = get_workspace_client()
     try:
-        for j in w.jobs.list(name=name, limit=25):
-            return j.job_id
-    except Exception as e:
-        logger.warning("jobs.list(name=...) failed: %s", str(e)[:200])
-    # The jobs.list() API caps `limit` at 100 per request — use the SDK's
-    # built-in pagination by not passing limit so it reads all pages.
-    try:
-        for j in w.jobs.list():
-            settings = getattr(j, "settings", None)
-            jname = getattr(settings, "name", None) if settings else None
-            if jname and jname.endswith(name):
-                return j.job_id
+        matches = [j for j in w.jobs.list()
+                   if name in (getattr(getattr(j, "settings", None), "name", "") or "")]
     except Exception as e:
         logger.warning("jobs.list() iter failed: %s", str(e)[:200])
-    return None
+        return None
+    for j in matches:                       # prefer the gen2 job on this workspace
+        if (j.settings.name or "").endswith("(gen2)"):
+            return j.job_id
+    for j in matches:                       # else an exact name
+        if (j.settings.name or "") == name:
+            return j.job_id
+    return matches[0].job_id if matches else None
 
 
 # ---------------------------------------------------------------------------
