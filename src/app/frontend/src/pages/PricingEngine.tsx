@@ -14,6 +14,12 @@ import {
 // all 4 model versions + rating-engine config + narrative + approval.
 // ---------------------------------------------------------------------------
 
+// Whole-pound GBP for the headline comparison tiles. Bare toLocaleString() leaked
+// pennies for fractional premiums (£7,281.53), which overflowed the narrow tiles and
+// clipped to "£7,281."; whole pounds match the integer tiles (£6,298) and fit.
+const gbp0 = (n: number | null | undefined) =>
+  '£' + Math.round(Number(n) || 0).toLocaleString('en-GB');
+
 type Release = {
   release_id: string;
   display_name: string;
@@ -729,20 +735,24 @@ function RepricedCard({ heading, sub, block, versions, primary }:
           <div className={`text-[10px] uppercase tracking-[0.08em] font-bold ${primary ? 'text-purple-700' : 'text-mut'}`}>
             {heading}
           </div>
-          <div className="text-sm font-semibold text-ink">{sub}</div>
+          <div className="text-sm font-semibold text-ink">
+            {sub.includes(' · effective ')
+              ? <>{sub.split(' · effective ')[0]} · <span className="whitespace-nowrap">effective {sub.split(' · effective ')[1]}</span></>
+              : sub}
+          </div>
         </div>
         {primary && (
           <Pill tone="blue" className="text-[9px]">primary</Pill>
         )}
       </div>
       <Grid cols={3} className="gap-2 mb-2">
-        <MiniTile label="Before"   value={`£${(before?.gross_premium || 0).toLocaleString()}`} />
-        <MiniTile label="After"    value={`£${(after?.gross_premium  || 0).toLocaleString()}`} />
+        <MiniTile label="Before"   value={gbp0(before?.gross_premium)} />
+        <MiniTile label="After"    value={gbp0(after?.gross_premium)} />
         <MiniTile
           label="Prorated"
-          value={`${(prorated || 0) >= 0 ? '+' : ''}£${(prorated || 0).toLocaleString()}`}
+          value={`${(prorated || 0) >= 0 ? '+' : ''}${gbp0(prorated)}`}
           tone={(prorated || 0) > 0 ? 'up' : (prorated || 0) < 0 ? 'down' : 'neutral'}
-          sub={`Annual ${(full || 0) >= 0 ? '+' : ''}£${(full || 0).toLocaleString()}`}
+          sub={`Annual ${(full || 0) >= 0 ? '+' : ''}${gbp0(full)}`}
         />
       </Grid>
       {versions && (
