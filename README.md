@@ -1,7 +1,63 @@
-# Pricing Workbench — Databricks Accelerator
+# Bricksurance Pricing Workbench — governed motor & commercial pricing on Databricks
 
-End-to-end commercial P&C pricing on Databricks, laid out the way a real pricing
-team actually operates — not abstracted into a "data + model" black box.
+> **Live app:** open **[go/bricksurance](https://go/bricksurance)** (the Bricksurance estate front door) → **Pricing**, or go straight to the deployed build:
+> **https://pricing-workbench-gen2-7474655676955816.aws.databricksapps.com**
+> (Databricks App, Databricks SSO; hosted in the FE demo workspace `fevm-lr-pricing-v2-aws-us`).
+> Proof that every layer ran: **[evidence/RUN_EVIDENCE.md](evidence/RUN_EVIDENCE.md)** · How it was built with AI: **[BUILD.md](BUILD.md)**
+
+## Part of Bricksurance — an open-source insurance operating system on Databricks
+
+This workbench is one module of **Bricksurance**: a fictional European insurer ("Bricksurance SE") whose whole operating model — pricing, underwriting, claims, reserving, reinsurance, IFRS 17, Solvency II, life — is built open-source on the Databricks Data Intelligence Platform. Every module shares the same principles: one governed Unity Catalog estate, serverless and scale-to-zero, real Databricks services (no mock AI), human-in-the-loop decisions with an immutable audit trail, and synthetic data so anyone can deploy it.
+
+| Module | Repo |
+|---|---|
+| **Pricing (this repo)** | `wryszka/bricksurance-pricing-workbench-fe-bar` |
+| Estate front door / hub (go/bricksurance) | [actuarial-workbench](https://github.com/wryszka/actuarial-workbench) |
+| Common data layer (ACORD-aligned) | [bricksurance-data-core](https://github.com/wryszka/bricksurance-data-core) |
+| Underwriting | [underwriting-workbench](https://github.com/wryszka/underwriting-workbench) |
+| Claims | [claims_workbench](https://github.com/wryszka/claims_workbench) |
+| Reserving | [reserving-workbench](https://github.com/wryszka/reserving-workbench) · [claim-to-confidence](https://github.com/wryszka/claim-to-confidence) |
+| Reinsurance | [reinsurance_workbench](https://github.com/wryszka/reinsurance_workbench) |
+| IFRS 17 | [ifrs17-workbench](https://github.com/wryszka/ifrs17-workbench) |
+| Solvency II | [solvency_workbench](https://github.com/wryszka/solvency_workbench) |
+| Life | [lifecast](https://github.com/wryszka/lifecast) |
+| Rate indications | [rate-indications-workbench](https://github.com/wryszka/rate-indications-workbench) |
+
+## The customer problem
+
+**Buyer:** Head of Pricing / Chief Underwriting Officer at a UK personal-lines and commercial insurer. **Domain owner:** the pricing actuaries and pricing analysts.
+
+- **Pricing is slow and fragmented.** Data prep, model building, rating-engine hand-off and monitoring run in separate tools, joined by spreadsheets and file transfers. Taking a new rating factor from idea to live price takes months.
+- **Regulators want evidence, not assertions.** The FCA's pricing-practices rules (GIPP — no price-walking at renewal) and Consumer Duty fair-value requirements mean every price change needs a traceable answer: which data, which model, who approved it, and was it fair.
+- **Optimisation is a black box.** Demand and elasticity models change the price customers see, but few teams can show the corridor, the constraints and the human sign-off behind an optimised price.
+
+## What this build does about it — the outcome
+
+One governed loop on Databricks: **external data → features → models → optimised price → human approval → deployment → monitoring**, all in one Unity Catalog estate with lineage and an immutable audit log.
+
+| Outcome (synthetic book, verified on the live build) | Result |
+|---|---|
+| Price optimisation uplift, motor new business | **+£1.00m (+10.7%)**: £9.38m hold-price → £10.39m optimised, all inside a ±15% corridor around the technical (break-even) price |
+| Closed loop — did the deployed prices do what the model said? | Predicted profit £8.79m vs realised £8.77m (**−0.2%**) one month on |
+| Value of real external data | Real UK postcode enrichment (1.5M postcodes) lifts **Gini 0.11 → 0.25**, deviance explained 1.0% → 5.3% |
+| Approval control | No price reaches production without a named human approval; the corridor is re-checked **server-side** and the decision is written to an immutable record |
+
+## Six Databricks layers, one connected journey
+
+One governed Unity Catalog estate runs through every layer: external and internal pricing data are ingested and governed, served online, modelled, explained by agents, questioned in Genie, and priced and approved in the app.
+
+| Layer | What it does here | Where to look |
+|---|---|---|
+| **1. Lakeflow + Unity Catalog** | Volume → bronze ingestion; Lakeflow Declarative Pipeline (silver) with data-quality expectations; gold Unified Pricing Table; 65 Lakeflow Jobs, with one `full_build` job that populates everything; UC tags, column descriptions, lineage, audit log, regulatory export | `resources/ingestion_pipeline.yml`, `src/01_ingestion/`, `src/02_silver/*.sql`, `src/03_gold/`, `resources/full_build.yml`, `src/00_setup/apply_tags.py`, `src/08_governance/` |
+| **2. Lakebase** | Online feature store (`motor-pricing-online-store`, `pricing-upt-online-store`) for low-latency feature lookups at quote time | `src/07_serving/setup_online_store.py`, `src/07_serving/test_online_lookup.py`, `src/04_models/production/motor_pricing_scorer.py` |
+| **3. ML (deep component)** | Frequency/severity GLMs, demand, fraud and retention GBMs, monotone LightGBM elasticity models; a 50-spec GLM model factory; MLflow tracking, UC registry with `@champion` aliases, governance PDF per model; real-time Model Serving scorers; a constrained price-optimisation solver | `src/04_models/production/`, `resources/factory_train.yml`, `src/07_serving/`, `resources/optimisation.yml` |
+| **4. GenAI agents** | Mosaic AI Agent Framework agents on Claude (Foundation Model API): pricing chat agent with personas (rate-change, drift sentinel, constraint author, committee scribe, price explainer…) and a governance agent. Tools read governed UC data; the whole optimisation loop is also exposed as an **MCP** tool surface, with the deploy gate enforced inside the tool | `src/04_models/production/pricing_chat_agent.py`, `src/04_models/production/governance_agent.py`, `src/app/server/routes/mcp.py`, `docs/MCP_INTERFACE_SPEC.md` |
+| **5. Genie** | Two curated Genie spaces over the governed gold tables: *Modelling Mart — Pricing Q&A* and *Commercial Quote Review*, embedded in the app | `src/00_setup/create_ai_assets.py`, `src/app/server/routes/genie.py` |
+| **6. Databricks App** | FastAPI + React workbench: data ingestion with HITL approval, feature store, model factory, deployment, quote review, monitoring, governance, and the seven-tab Price Optimisation loop (approve → deploy) | `src/app/`, `resources/app.yml` |
+
+**Deployed vs illustrative:** everything above is deployed and has run (see [evidence](evidence/RUN_EVIDENCE.md)). Policy, quote and claim data are **synthetic**; the postcode enrichment uses **real public UK data** (ONSPD, IMD 2019, ONS RUC). No customer data is used anywhere.
+
+---
 
 ## The flow, literally
 
@@ -97,7 +153,7 @@ rating engine prices live (scale-to-zero); the agents answer from real tables.
 | **Pricing Workbench app** | Execs, underwriters, operators, actuaries | React app — sidebar: Data Ingestion, Model Factory, Quote Review, Governance, etc. |
 | **New Data Impact study** (`src/new_data_impact/`) | Data scientists, actuaries, governance | 6 notebooks — build enrichment → train standard vs enriched models → governance PDF → AI agent |
 
-Both tracks share the same Unity Catalog schema (`pricing_upt`). The study's derivative tables are prefixed `impact_*` so they group together in Catalog Explorer; the reusable `postcode_enrichment` reference is used by both tracks.
+Both tracks share the same Unity Catalog schema (`pricing_workbench_gen2`). The study's derivative tables are prefixed `impact_*` so they group together in Catalog Explorer; the reusable `postcode_enrichment` reference is used by both tracks.
 
 ## Architecture
 
@@ -129,13 +185,16 @@ Internal Data (policies, claims, quotes) ───────→ Unified Pricin
 │   ├── 01_ingestion/           # CSV → Bronze
 │   ├── 02_silver/              # DLT expectations + cleansing
 │   ├── 03_gold/                # Unified Pricing Table build
-│   ├── 04_models/              # 6 model training notebooks + AI agent
-│   ├── 05_use_cases/           # Shadow pricing, PIT, enriched pricing
-│   ├── 06_model_factory/       # Automated training + evaluation
-│   ├── 07_serving/             # Online store + model endpoints
-│   ├── 08_governance/          # Dashboard + regulatory export
-│   ├── app/                    # FastAPI + React HITL application
+│   ├── 04_models/production/   # GLMs, GBMs, elasticity, model factory, optimisation, agents
+│   ├── 05_use_cases/           # Shadow pricing, PIT, new dataset, lineage, enriched pricing
+│   ├── 07_serving/             # Lakebase online store + model serving endpoints
+│   ├── 08_governance/          # Regulatory export
+│   ├── new_data_impact/        # Notebook track: does real external data improve pricing?
+│   ├── optimisation_demo/      # Driven optimisation demo chapters
+│   ├── app/                    # FastAPI + React HITL application (+ MCP server)
 │   └── utils/                  # Shared audit + diagram utilities
+├── evidence/                   # Proof the build ran (live state, captured via CLI)
+├── BUILD.md                    # How this was built with AI
 └── docs/
     ├── talk_track.md           # Executive (30 min) + Technical (60 min)
     ├── data_dictionary.md      # Every table and column documented
