@@ -2,6 +2,10 @@
 
 Captured **2026-10-12** from the live deployment (workspace `fevm-lr-pricing-v2-aws-us`, catalog `lr_pricing_v2_aws_us_catalog`, schema `pricing_workbench_gen2`) with the Databricks CLI. Everything below is the real state of the deployed build, not a mock.
 
+## Recording
+
+End-to-end walkthrough of the deployed app: [Bricksurance — Pricing Workbench (YouTube)](https://www.youtube.com/watch?v=p9UTKOY7AKc)
+
 ## Databricks App
 
 | App | URL | App state | Compute | Active deployment |

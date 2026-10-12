@@ -1,9 +1,14 @@
 # Bricksurance Pricing Workbench — governed motor & commercial pricing on Databricks
 
-> **Live app:** open **[go/bricksurance](https://go/bricksurance)** (the Bricksurance estate front door) → **Pricing**, or go straight to the deployed build:
-> **https://pricing-workbench-gen2-7474655676955816.aws.databricksapps.com**
-> (Databricks App, Databricks SSO; hosted in the FE demo workspace `fevm-lr-pricing-v2-aws-us`).
-> Proof that every layer ran: **[evidence/RUN_EVIDENCE.md](evidence/RUN_EVIDENCE.md)** · How it was built with AI: **[BUILD.md](BUILD.md)**
+> **▶ Live app** (open to all Databricks colleagues, Databricks SSO):
+> - Via **[go/bricksurance](https://go/bricksurance)**, the Bricksurance estate front door: **Pricing workbench** tile → **gen2 Beta** button. This repo is the gen2 build.
+> - Direct link: **https://pricing-workbench-gen2-7474655676955816.aws.databricksapps.com**. The guided Price Optimisation demo is at [`/optimisation-demo`](https://pricing-workbench-gen2-7474655676955816.aws.databricksapps.com/optimisation-demo).
+>
+> **🎬 Demo recording:** [Bricksurance — Pricing Workbench (YouTube)](https://www.youtube.com/watch?v=p9UTKOY7AKc)
+>
+> **📊 Deck:** [Actuarial Pricing on Databricks](https://docs.google.com/presentation/d/1dIvzuaXDl_lCNuW153e0pzewNeVCJIF9ynzoWz842k8) (Databricks-internal)
+>
+> **✅ Proof every layer ran:** [evidence/RUN_EVIDENCE.md](evidence/RUN_EVIDENCE.md) · **🤖 How it was built with AI:** [BUILD.md](BUILD.md)
 
 ## Part of Bricksurance — an open-source insurance operating system on Databricks
 
@@ -12,7 +17,7 @@ This workbench is one module of **Bricksurance**: a fictional European insurer (
 | Module | Repo |
 |---|---|
 | **Pricing (this repo)** | `wryszka/bricksurance-pricing-workbench-fe-bar` |
-| Estate front door / hub (go/bricksurance) | [actuarial-workbench](https://github.com/wryszka/actuarial-workbench) |
+| Estate front door / hub ([go/bricksurance](https://go/bricksurance)) | [actuarial-workbench](https://github.com/wryszka/actuarial-workbench) |
 | Common data layer (ACORD-aligned) | [bricksurance-data-core](https://github.com/wryszka/bricksurance-data-core) |
 | Underwriting | [underwriting-workbench](https://github.com/wryszka/underwriting-workbench) |
 | Claims | [claims_workbench](https://github.com/wryszka/claims_workbench) |
