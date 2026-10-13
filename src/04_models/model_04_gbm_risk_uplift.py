@@ -82,7 +82,8 @@ pdf = upt.select(*select_cols).toPandas()
 pdf["claim_frequency"] = pdf["claim_count_5y"].fillna(0).astype(float)
 pdf[all_features] = pdf[all_features].apply(pd.to_numeric, errors="coerce").fillna(0)
 
-pdf["split_hash"] = pdf["policy_id"].apply(lambda x: abs(hash(x)) % 100)
+import zlib  # stable across processes; Python's hash() is salted per run
+pdf["split_hash"] = pdf["policy_id"].apply(lambda x: zlib.crc32(str(x).encode()) % 100)
 train_pdf = pdf[pdf["split_hash"] < 80].copy()
 test_pdf = pdf[pdf["split_hash"] >= 80].copy()
 

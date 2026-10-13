@@ -113,7 +113,8 @@ print(f"Fraud rate: {fraud_rate:.1%} ({pdf['is_fraud'].sum()} fraudulent)")
 
 # COMMAND ----------
 
-pdf["split_hash"] = pdf["policy_id"].apply(lambda x: abs(hash(x)) % 100)
+import zlib  # stable across processes; Python's hash() is salted per run
+pdf["split_hash"] = pdf["policy_id"].apply(lambda x: zlib.crc32(str(x).encode()) % 100)
 train_pdf = pdf[pdf["split_hash"] < 80].copy()
 test_pdf = pdf[pdf["split_hash"] >= 80].copy()
 

@@ -1,0 +1,30 @@
+# Gen AI evaluation: LLM-judge scoring (MLflow 3 mlflow.genai.evaluate) of the Agent Bricks
+# governance Knowledge Assistant against ground truth read from UC + MLflow + the pricing
+# constraint policy, with a no-retrieval Claude baseline as the ablation. Results land in
+# governance_assistant_eval_{set,results,summary} and audit_log (genai_evaluation).
+resources:
+  jobs:
+    governance_assistant_eval:
+      name: "Governance Assistant — LLM-judge evaluation (gen2)"
+      timeout_seconds: 3600
+      parameters:
+        - name: catalog_name
+          default: ${var.catalog_name}
+        - name: schema_name
+          default: ${var.schema_name}
+      tasks:
+        - task_key: evaluate
+          notebook_task:
+            notebook_path: ../src/04_models/production/evaluate_governance_assistant.py
+            base_parameters:
+              catalog_name: ${var.catalog_name}
+              schema_name:  ${var.schema_name}
+          environment_key: env
+      environments:
+        - environment_key: env
+          spec:
+            client: "5"
+            dependencies:
+              - mlflow[databricks]>=3.1
+              - pyyaml
+              - pypdf

@@ -57,8 +57,10 @@ dbutils.library.restartPython()
 
 # COMMAND ----------
 
-CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "pricing_workbench_gen2"
+dbutils.widgets.text("catalog_name", "lr_pricing_v2_aws_us_catalog")
+dbutils.widgets.text("schema_name", "pricing_workbench_gen2")
+CATALOG = dbutils.widgets.get("catalog_name")
+SCHEMA = dbutils.widgets.get("schema_name")
 
 spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.{SCHEMA}")
 spark.sql(f"USE {CATALOG}.{SCHEMA}")
@@ -83,6 +85,8 @@ mlflow.set_registry_uri("databricks-uc")
 # not under a baked-in email that won't exist on another workspace.
 _user = spark.sql("SELECT current_user()").collect()[0][0]
 experiment_path = f"/Users/{_user}/{SCHEMA}/experiments"
+from databricks.sdk import WorkspaceClient
+WorkspaceClient().workspace.mkdirs(f"/Users/{_user}/{SCHEMA}")   # parent folder must exist on a fresh workspace
 mlflow.set_experiment(experiment_path)
 
 print(f"Catalog : {CATALOG}")

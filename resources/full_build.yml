@@ -181,6 +181,31 @@ resources:
           run_job_task:
             job_id: ${resources.jobs.agent_bricks_setup.id}
 
+        # --- Evidence layer: model evidence (ablation + Shapley + assumption checks),
+        # the new-data impact study, the LLM-judge evaluation of the Knowledge
+        # Assistant, then the agent audit trail (syncs the eval's traces too).
+        # Drift-triggered retraining has its own table-update trigger. ---
+        - task_key: model_evidence
+          depends_on: [{ task_key: build_upt }]
+          run_if: ALL_DONE
+          run_job_task:
+            job_id: ${resources.jobs.model_evidence.id}
+        - task_key: new_data_impact
+          depends_on: [{ task_key: postcode }]
+          run_if: ALL_DONE
+          run_job_task:
+            job_id: ${resources.jobs.new_data_impact_study.id}
+        - task_key: governance_assistant_eval
+          depends_on: [{ task_key: agent_bricks }]
+          run_if: ALL_DONE
+          run_job_task:
+            job_id: ${resources.jobs.governance_assistant_eval.id}
+        - task_key: agent_audit_trail
+          depends_on: [{ task_key: governance_assistant_eval }]
+          run_if: ALL_DONE
+          run_job_task:
+            job_id: ${resources.jobs.agent_audit_trail.id}
+
         # --- app-SP grants (endpoints must exist) then metadata + tags ---
         - task_key: grant_app_sp
           depends_on:

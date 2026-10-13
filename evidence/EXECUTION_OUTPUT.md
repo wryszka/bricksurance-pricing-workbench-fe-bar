@@ -1,6 +1,6 @@
 # Execution output — real results from the deployed build (text)
 
-Captured **2026-10-13 12:06 UTC** by querying the live deployment (workspace `fevm-lr-pricing-v2-aws-us`, schema `lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2`) with the Databricks SDK: SQL warehouse statements, Lakeflow pipeline event log, MLflow, Model Serving, the Agent endpoint and the Genie Conversation API. Every block below is the verbatim response, not a mock. Stages follow the journey: Lakeflow → Unity Catalog → Lakebase → ML → GenAI agent → Genie → App.
+Captured **2026-10-13 19:21 UTC** by querying the live deployment (workspace `fevm-lr-pricing-v2-aws-us`, schema `lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2`) with the Databricks SDK: SQL warehouse statements, Lakeflow pipeline event log, MLflow, Model Serving, the Agent endpoint and the Genie Conversation API. Every block below is the verbatim response, not a mock. Stages follow the journey: Lakeflow → Unity Catalog → Lakebase → ML (with model evidence and drift retraining) → GenAI agents (with LLM-judge evaluation) → Genie → governance audit trail → App.
 
 ## 1. Lakeflow — raw ingestion → silver (Declarative Pipeline) → gold
 
@@ -84,15 +84,15 @@ GROUP BY tag_name, tag_value ORDER BY tables_tagged DESC LIMIT 12
 ```
 | tag_name | tag_value | tables_tagged |
 |---|---|---|
-| pw_managed_by | dab | 65 |
-| pw_project | pricing_workbench | 65 |
-| pw_contains_pii | false | 61 |
-| pw_environment | demo | 60 |
+| pw_project | pricing_workbench | 68 |
+| pw_managed_by | dab | 68 |
+| pw_contains_pii | false | 64 |
 | pw_tier | core | 60 |
 | pw_owner | laurence.ryszka@databricks.com | 60 |
+| pw_environment | demo | 60 |
 | demo_environment | true | 7 |
-| business_line | commercial_property | 5 |
 | pw_tier | semantic | 5 |
+| business_line | commercial_property | 5 |
 | refresh_cadence | realtime | 4 |
 | pw_contains_pii | true | 4 |
 | pricing_domain | quote_stream | 4 |
@@ -147,12 +147,12 @@ FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.audit_log GROUP BY even
 | pricing_engine_release_published | 39 | 2026-08-01T09:00:00.000Z |
 | optimisation_solve | 19 | 2026-10-13T08:23:25.941Z |
 | supervisor_dispatch | 16 | 2026-10-12T13:44:28.037Z |
-| model_promoted | 12 | 2026-08-26T11:00:42.726Z |
-| governance_pack_generated | 12 | 2026-08-26T11:00:40.743Z |
 | notebook_opened | 12 | 2026-10-12T13:26:52.827Z |
+| governance_pack_generated | 12 | 2026-08-26T11:00:40.743Z |
+| model_promoted | 12 | 2026-08-26T11:00:42.726Z |
 | bias_investigation | 11 | 2026-10-12T13:42:22.181Z |
-| rating_engine_config_change | 9 | 2026-02-01T09:00:00.000Z |
 | optimisation_fairness_screen | 9 | 2026-09-05T14:29:35.073Z |
+| rating_engine_config_change | 9 | 2026-02-01T09:00:00.000Z |
 | factory_plan_approved | 9 | 2026-10-12T13:52:36.960Z |
 
 
@@ -168,6 +168,7 @@ WHERE table_schema = 'pricing_workbench_gen2' AND table_type = 'METRIC_VIEW' ORD
 ```
 | table_name | table_type |
 |---|---|
+| mv_agent_audit | METRIC_VIEW |
 | mv_commercial_portfolio | METRIC_VIEW |
 | mv_motor_portfolio | METRIC_VIEW |
 | mv_price_frontier | METRIC_VIEW |
@@ -227,11 +228,11 @@ SELECT policy_id FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.unifie
 | POL-MOTOR-00000002 |
 | POL-MOTOR-00000003 |
 
-`pwg2_motor_scorer` ← `{"policy_id": "POL-MOTOR-00000001"}` (features fetched from Lakebase by key) → **[{"final_premium": 1430.88, "freq_pred": 0.5535404804736717, "annual_freq": 0.11070809609473434, "sev_pred": 7161.326277313143, "demand_pred": 0.5469454545171518, "fraud_pred": 0.45616180182916555, "technical_premium": 1075.85, "young_driver_load": 161.38, "telematics_event_load": 107.59, "fraud_load": 86.07, "demand_adj": 0.0, "rating_engine_version": "motor_v1.3", "freq_version": "3", "sev_versi** in 1435 ms
+`pwg2_motor_scorer` ← `{"policy_id": "POL-MOTOR-00000001"}` (features fetched from Lakebase by key) → **[{"final_premium": 1430.88, "freq_pred": 0.5535404804736717, "annual_freq": 0.11070809609473434, "sev_pred": 7161.326277313143, "demand_pred": 0.5469454545171518, "fraud_pred": 0.45616180182916555, "technical_premium": 1075.85, "young_driver_load": 161.38, "telematics_event_load": 107.59, "fraud_load": 86.07, "demand_adj": 0.0, "rating_engine_version": "motor_v1.3", "freq_version": "3", "sev_versi** in 2107 ms
 
-`pwg2_motor_scorer` ← `{"policy_id": "POL-MOTOR-00000002"}` (features fetched from Lakebase by key) → **[{"final_premium": 1120.04, "freq_pred": 0.44372509920015224, "annual_freq": 0.08874501984003044, "sev_pred": 7561.45201007317, "demand_pred": 0.685194196290693, "fraud_pred": 0.22313178401601236, "technical_premium": 910.6, "young_driver_load": 136.59, "telematics_event_load": 0.0, "fraud_load": 72.85, "demand_adj": 0.0, "rating_engine_version": "motor_v1.3", "freq_version": "3", "sev_version": "** in 222 ms
+`pwg2_motor_scorer` ← `{"policy_id": "POL-MOTOR-00000002"}` (features fetched from Lakebase by key) → **[{"final_premium": 1120.04, "freq_pred": 0.44372509920015224, "annual_freq": 0.08874501984003044, "sev_pred": 7561.45201007317, "demand_pred": 0.685194196290693, "fraud_pred": 0.22313178401601236, "technical_premium": 910.6, "young_driver_load": 136.59, "telematics_event_load": 0.0, "fraud_load": 72.85, "demand_adj": 0.0, "rating_engine_version": "motor_v1.3", "freq_version": "3", "sev_version": "** in 237 ms
 
-`pwg2_motor_scorer` ← `{"policy_id": "POL-MOTOR-00000003"}` (features fetched from Lakebase by key) → **[{"final_premium": 1207.65, "freq_pred": 0.5703561626474991, "annual_freq": 0.11407123252949983, "sev_pred": 7223.747622264666, "demand_pred": 0.656567662424388, "fraud_pred": 0.27374876198168596, "technical_premium": 1118.2, "young_driver_load": 0.0, "telematics_event_load": 0.0, "fraud_load": 89.46, "demand_adj": 0.0, "rating_engine_version": "motor_v1.3", "freq_version": "3", "sev_version": "3"** in 228 ms
+`pwg2_motor_scorer` ← `{"policy_id": "POL-MOTOR-00000003"}` (features fetched from Lakebase by key) → **[{"final_premium": 1207.65, "freq_pred": 0.5703561626474991, "annual_freq": 0.11407123252949983, "sev_pred": 7223.747622264666, "demand_pred": 0.656567662424388, "fraud_pred": 0.27374876198168596, "technical_premium": 1118.2, "young_driver_load": 0.0, "telematics_event_load": 0.0, "fraud_load": 89.46, "demand_adj": 0.0, "rating_engine_version": "motor_v1.3", "freq_version": "3", "sev_version": "3"** in 225 ms
 
 
 ## 4. ML — models registered in Unity Catalog, champion metrics (MLflow)
@@ -244,8 +245,11 @@ SELECT policy_id FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.unifie
 | `fraud_gbm` | v36 | auc=0.7623, best_iteration=2.0353, gini=0.5246, logloss=0.2884, precision=0.0, recall=0.0 |
 | `fraud_gbm_motor` | v3 | auc=0.8691, best_iteration=12.0, gini=0.7381, logloss=0.3818 |
 | `freq_glm` | v36 | aic=1299168.5611, bic=-4177914.3588, gini=0.1228, rmse=1.5811 |
+| `freq_glm_drift_challenger` | (no champion alias) | |
 | `freq_glm_motor` | v3 | aic=7867.9565, bic=-26856.996, gini=0.0389, rmse=0.8914 |
 | `governance_agent` | (no champion alias) | |
+| `impact_glm_frequency_enriched` | (no champion alias) | |
+| `impact_glm_frequency_standard` | (no champion alias) | |
 | `pwg2_chat_agent` | (no champion alias) | |
 | `pwg2_motor_scorer` | (no champion alias) | |
 | `pwg2_motor_scorer_direct` | v3 | (metrics logged as artifacts) |
@@ -338,11 +342,154 @@ SELECT decision_id, created_at, approver, constraint_version, objective, get_jso
 | 35dc9241-ab53-4666-be84-2e19251f4895 | 2026-08-26T07:54:52.931Z | laurence.ryszka@databricks.com | v1 | expected_profit | 7950317.45 | 8787580.84 | true |
 
 
+## 4c. ML — new-data impact study, re-run live on this workspace
+
+Job *Study — new external data impact on pricing models* (`src/new_data_impact/01_build_all_models.py`): a 200,000-policy synthetic book keyed to real English postcodes; standard vs enriched frequency GLM (reference models).
+
+**Standard vs enriched frequency GLM (test set)**
+
+```sql
+SELECT * FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.impact_model_comparison
+```
+| metric | model_1_standard | model_2_enriched |
+|---|---|---|
+| AIC | 140488.2857 | 136769.5331 |
+| BIC | 140616.3278 | 136966.5211 |
+| Deviance | 93093.7322 | 89360.9797 |
+| Null Deviance | 94113.4095 | 94113.4095 |
+| Deviance Explained | 0.0108 | 0.0505 |
+| MAE (test) | 0.3025 | 0.2944 |
+| RMSE (test) | 0.4321 | 0.4262 |
+| Gini (test) | 0.1134 | 0.2444 |
+
+
+## 4d. ML — ablation ladder with an out-of-fold leakage guard, and Shapley attribution
+
+Job *Model evidence*, task `challenger_comparison` (`src/04_models/challenger_comparison.py`), on the commercial gold table. The claims-based factor is rebuilt from training-fold claims only before the lift test.
+
+**Sequential ablation ladder (test Gini)**
+
+```sql
+SELECT cohort, n_features, round(gini,4) AS gini, round(lift_vs_prev,4) AS lift_vs_prev, attribution_factor, computed_at FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.challenger_comparison_latest
+```
+| cohort | n_features | gini | lift_vs_prev | attribution_factor | computed_at |
+|---|---|---|---|---|---|
+| baseline | 21 | 0.0366 | 0.0 |  | 2026-10-13T19:02:34.328Z |
+| plus_urban | 22 | 0.0374 | 8.0E-4 | urban_score | 2026-10-13T19:02:34.328Z |
+| plus_coastal | 23 | 0.0374 | 0.0 | is_coastal | 2026-10-13T19:02:34.328Z |
+| plus_deprivation | 24 | 0.0375 | 1.0E-4 | deprivation_composite | 2026-10-13T19:02:34.328Z |
+| plus_claim_freq | 25 | 0.0426 | 0.0051 | neighbourhood_claim_frequency | 2026-10-13T19:02:34.328Z |
+
+**Order-independent Shapley attribution vs the sequential ladder**
+
+```sql
+SELECT factor, round(sequential_lift,4) AS sequential_lift, round(shapley_lift,4) AS shapley_lift, round(shapley_share_of_total,3) AS shapley_share, n_subset_fits FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.challenger_attribution_shapley
+```
+| factor | sequential_lift | shapley_lift | shapley_share | n_subset_fits |
+|---|---|---|---|---|
+| urban_score | 8.0E-4 | 5.0E-4 | 0.086 | 16 |
+| is_coastal | 0.0 | 0.0 | 0.0 | 16 |
+| deprivation_composite | 1.0E-4 | 1.0E-4 | 0.014 | 16 |
+| neighbourhood_claim_frequency | 0.0051 | 0.0054 | 0.901 | 16 |
+
+
+## 4e. ML — model assumption checks (every modelling trade-off, measured)
+
+Job *Model evidence*, task `assumption_checks` (`src/04_models/model_assumption_checks.py`).
+
+**model_assumption_checks**
+
+```sql
+SELECT check_id, check_name, metric, round(value,5) AS value, detail, verdict FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.model_assumption_checks ORDER BY check_id, metric
+```
+| check_id | check_name | metric | value | detail | verdict |
+|---|---|---|---|---|---|
+| 1 | split_stability | baseline_gini_mean | 0.03556 | sd 0.0035 over 20 splits |  |
+| 1 | split_stability | full_gini_mean | 0.05319 | sd 0.0033 over 20 splits |  |
+| 1 | split_stability | lift_mean | 0.01762 | sd 0.0020, min 0.0139, max 0.0212 | STABLE |
+| 2 | leakage_guard | gini_inflation_from_leakage | 0.0126 | mean weight of a policy's own claims in its factor = 0.00093 | MATERIAL: publish the out-of-fold factor |
+| 2 | leakage_guard | test_gini_in_sample_factor | 0.05515 | factor built from all policies' claims |  |
+| 2 | leakage_guard | test_gini_out_of_fold_factor | 0.04255 | factor built from training-fold claims only |  |
+| 3 | credibility_k | credibility_z_median_postcode | 0.91055 | Z = n / (n + K) at K = 100 | K barely binds at this book size |
+| 3 | credibility_k | k_estimated_buhlmann_straub |  | EPV 2.5801, VHM -0.000187, 295 postcodes, median 1018 policies each | NO CREDIBLE POSTCODE SIGNAL: VHM ≤ 0, credibility theory gives Z = 0 |
+| 3 | credibility_k | k_governed | 100.0 | value used in derive_factors.py |  |
+| 3 | credibility_k | test_gini_at_k_0 | 0.04269 | out-of-fold factor |  |
+| 3 | credibility_k | test_gini_at_k_10 | 0.04267 | out-of-fold factor |  |
+| 3 | credibility_k | test_gini_at_k_100 | 0.04255 | out-of-fold factor |  |
+| 3 | credibility_k | test_gini_at_k_1000 | 0.04171 | out-of-fold factor |  |
+| 3 | credibility_k | test_gini_at_k_10000 | 0.04052 | out-of-fold factor |  |
+| 4 | link_function | frequency_link |  | Poisson log link is the canonical link: no trade-off | CANONICAL |
+| 4 | link_function | severity_aic_inverse_canonical | 3110378.62478 | converged=True |  |
+| 4 | link_function | severity_aic_log | 3151285.68617 | converged=False |  |
+| 4 | link_function | severity_test_gini_inverse_canonical | -0.04096 |  |  |
+| 4 | link_function | severity_test_gini_log | -0.04506 |  |  |
+| 4 | link_function | share_invalid_predictions_inverse_canonical | 0.0 | linear predictor ≤ 0 means a negative or infinite mean claim cost |  |
+| 4 | link_function | share_invalid_predictions_log | 0.0 | linear predictor ≤ 0 means a negative or infinite mean claim cost |  |
+| 5 | exposure_offset | intercept_shift | -1.60944 | expected −log(5) = -1.6094 |  |
+| 5 | exposure_offset | max_abs_diff_annual_frequency | 0.0 |  | EQUIVALENT while exposure is constant; add the offset when policy terms vary |
+| 5 | exposure_offset | max_abs_diff_non_intercept_coefs | 0.0 |  |  |
+
+
+## 4f. ML — drift-triggered retraining (challenger + human promotion)
+
+Job *Drift-triggered retraining* (`src/04_models/production/drift_detect.py` → condition task → `drift_retrain_challenger.py`), triggered by updates to the raw vendor tables.
+
+**Drift check fired automatically by the table-update trigger (standard gate PSI ≥ 0.2): top features**
+
+```sql
+SELECT checked_at, psi_threshold, drift_detected, feature, round(psi,4) AS psi, band, round(baseline_mean,3) AS baseline_mean, round(candidate_mean,3) AS candidate_mean, baseline_source FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.model_drift_metrics WHERE check_run_id = (SELECT max_by(check_run_id, checked_at) FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.model_drift_metrics WHERE psi_threshold = 0.2) ORDER BY psi DESC LIMIT 8
+```
+| checked_at | psi_threshold | drift_detected | feature | psi | band | baseline_mean | candidate_mean | baseline_source |
+|---|---|---|---|---|---|---|---|---|
+| 2026-10-13T19:12:50.891Z | 0.2 | false | ccj_count | 0.0568 | stable | 1.094 | 1.121 | stored training profile (lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.unified_pricing_table_live current = training data (no data write since champion training; last write v231 at 2026-08-26 10:42 UTC); captured 2026-10-13 18:58 UTC) |
+| 2026-10-13T19:12:50.891Z | 0.2 | false | composite_location_risk | 0.0496 | stable | 4.633 | 4.854 | stored training profile (lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.unified_pricing_table_live current = training data (no data write since champion training; last write v231 at 2026-08-26 10:42 UTC); captured 2026-10-13 18:58 UTC) |
+| 2026-10-13T19:12:50.891Z | 0.2 | false | flood_zone_rating | 0.0411 | stable | 4.019 | 4.301 | stored training profile (lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.unified_pricing_table_live current = training data (no data write since champion training; last write v231 at 2026-08-26 10:42 UTC); captured 2026-10-13 18:58 UTC) |
+| 2026-10-13T19:12:50.891Z | 0.2 | false | crime_theft_index | 0.0356 | stable | 46.84 | 49.491 | stored training profile (lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.unified_pricing_table_live current = training data (no data write since champion training; last write v231 at 2026-08-26 10:42 UTC); captured 2026-10-13 18:58 UTC) |
+| 2026-10-13T19:12:50.891Z | 0.2 | false | subsidence_risk | 0.0207 | stable | 4.863 | 5.142 | stored training profile (lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.unified_pricing_table_live current = training data (no data write since champion training; last write v231 at 2026-08-26 10:42 UTC); captured 2026-10-13 18:58 UTC) |
+| 2026-10-13T19:12:50.891Z | 0.2 | false | credit_score | 0.0019 | stable | 550.073 | 550.883 | stored training profile (lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.unified_pricing_table_live current = training data (no data write since champion training; last write v231 at 2026-08-26 10:42 UTC); captured 2026-10-13 18:58 UTC) |
+| 2026-10-13T19:12:50.891Z | 0.2 | false | is_coastal | 0.0 | stable | 0.156 | 0.156 | stored training profile (lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.unified_pricing_table_live current = training data (no data write since champion training; last write v231 at 2026-08-26 10:42 UTC); captured 2026-10-13 18:58 UTC) |
+| 2026-10-13T19:12:50.891Z | 0.2 | false | distance_to_coast_km | 0.0 | stable | 96.325 | 96.325 | stored training profile (lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.unified_pricing_table_live current = training data (no data write since champion training; last write v231 at 2026-08-26 10:42 UTC); captured 2026-10-13 18:58 UTC) |
+
+**Every drift check: gate threshold and decision**
+
+```sql
+SELECT checked_at, psi_threshold, max(drift_detected) AS drift_detected, round(max(psi),4) AS max_psi FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.model_drift_metrics GROUP BY check_run_id, checked_at, psi_threshold ORDER BY checked_at DESC LIMIT 6
+```
+| checked_at | psi_threshold | drift_detected | max_psi |
+|---|---|---|---|
+| 2026-10-13T19:16:17.399Z | 0.05 | true | 0.0568 |
+| 2026-10-13T19:12:50.891Z | 0.2 | false | 0.0568 |
+| 2026-10-13T19:02:01.933Z | 0.05 | true | 0.0568 |
+| 2026-10-13T18:59:59.001Z | 0.2 | false | 0.0568 |
+| 2026-10-13T18:58:31.108Z | 0.2 | false | 0.0 |
+| 2026-10-13T18:54:35.979Z | 0.2 | false | 0.0 |
+
+**Retrain log (strict 0.05 gate): challenger vs champion on the same holdout**
+
+```sql
+SELECT triggered_at, champion_version, challenger_model, challenger_version, test_rows, split_method, round(champion_gini,4) AS champion_gini, round(challenger_gini,4) AS challenger_gini, round(deviance_change_pct,3) AS deviance_change_pct, round(credibility_k_estimated,0) AS credibility_k_estimated, credibility_flag FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.model_retrain_log ORDER BY triggered_at DESC LIMIT 2
+```
+| triggered_at | champion_version | challenger_model | challenger_version | test_rows | split_method | champion_gini | challenger_gini | deviance_change_pct | credibility_k_estimated | credibility_flag |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-13T19:18:17.726Z | 36 | lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.freq_glm_drift_challenger | 2 | 99886 | crc32(policy_id) % 100 < 80 | 0.1203 | 0.1199 | 0.009 | 517472.0 | outside 0.5x-2x of governed K: review the credibility assumption |
+| 2026-10-13T19:03:32.258Z | 36 | lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.freq_glm_drift_challenger | 1 | 99886 | crc32(policy_id) % 100 < 80 | 0.1203 | 0.1199 | 0.009 | 517472.0 | outside 0.5x-2x of governed K: review the credibility assumption |
+
+**Promotion requests awaiting a named human**
+
+```sql
+SELECT created_at, model_name, champion_version, challenger_version, recommendation, substr(rationale,1,200) AS rationale, status FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.model_promotion_requests ORDER BY created_at DESC LIMIT 2
+```
+| created_at | model_name | champion_version | challenger_version | recommendation | rationale | status |
+|---|---|---|---|---|---|---|
+| 2026-10-13T19:18:17.726Z | lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.freq_glm | 36 | 2 | hold | The champion still holds on the drifted book: Gini Δ -0.0004, deviance +0.01%. Keep monitoring. | pending_human_review |
+| 2026-10-13T19:03:32.258Z | lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.freq_glm | 36 | 1 | hold | The champion still holds on the drifted book: Gini Δ -0.0004, deviance +0.01%. Keep monitoring. | pending_human_review |
+
+
 ## 5. GenAI — Agent Framework agent on Claude (live call)
 
 **Question to `pwg2_chat_agent` (persona `recommender`):** Summarise the current optimised motor price plan: which segments move most, the expected profit impact versus holding prices, and whether every segment stays inside the corridor.
 
-**Answer** (52.7s):
+**Answer** (85.1s):
 
 > Here is the full decision pack.
 > 
@@ -367,27 +514,66 @@ SELECT decision_id, created_at, approver, constraint_version, objective, get_jso
 > | **25-70 · grpHigh** | +5.0 % | 62.7 % → 58.6 % | £138,110 | ✅ Inside |
 > | **U25 · grpLow** | +5.0 % | 59.2 % → 56.0 % | £122,711 | ✅ Inside |
 > | **70+ · grpLow** | +5.0 % | 72.6 % → 68.1 % | £15,337 | ✅ Inside |
-> | **70+ · grpMid** | +6.34 %* | 74.5 % → 65.1 % | £8,239 | ✅ Inside |
+> | **70+ · grpMid** | +6.34 %** | 74.5 % → 65.1 % | £8,239 | ✅ Inside |
 > | **70+ · grpHigh** | **+7.5 %** ✦ largest rise | 74.5 % → 64.1 % | £5,706 | ✅ Inside |
 > | **U25 · grpHigh** | **−5.0 %** ✦ only cut | 50.1 % → 61.6 % | £1,784 | ✅ Inside |
 > | **U25 · grpMid** | −5.0 % | 56.7 % → 69.0 % | **−£4,714** ⚠️ | ✅ Inside |
 > 
-> > *70+ · grpMid sits at an interior (non-boundary) optimum at +6.34 %, not at the corridor cap.
-> > ✦ U25 · grpMid is the **only segment with a negative profit uplift** (−£4,714); the model is buying volume at a cost — worth scrutinising.
+> > **All 9 segments are within corridor.** The deployment gate would not block on corridor grounds alone.
 > 
-> **Corridor verdict: 9/9 segments within bounds.** The deployment gate will enforce this server-side regardless.
+> **Key movements:**
+> - The **25-70 age band** drives the bulk of the uplift — grpLow alone contributes ~54% of total profit gain.
+> - **70+ · grpHigh** receives the steepest increase (+7.5%), which triggers the disparate-impact flag (see §3).
+> - **U25 · grpHigh and grpMid** are cut by 5%, stimulating conversion but U25 · grpMid produces a small profit drag (−£4.7k); the committee should confirm this is acceptable.
 > 
 > ---
 > 
-> ## 2. Profit Impact vs. Hold
+> ## 2. Expected Profit vs Hold — Frontier View
 > 
-> | Scenario | Expected Profit | Expected Volume | Expected GWP |
+> | Scenario | Expected Profit | Volume | GWP |
 > |---|---|---|---|
-> | **Hold (baseline)** | £9,419,164 | 32,540 policies | £34,587,270 |
-> | Best frontier candidate (cand_00066) | **£10,371,933** | 25,513 | £30,100,112 |
-> | **Uplift vs. Hold** | **+£952,769 (+10.1 %)** | −7,027 (−21.6 %) | −£4,487,158 |
-> 
-> > The optimiser is deliberately trading volume and GWP for margin — a classic profit-optimised frontier move. The committee should confirm this volume
+> | **Hold (baseline)** | £9,419,164 | 32,540 | £34,587,270 |
+> | Frontier cand_00066 (recommended candidate) | £10,371,933 | 25,513 | £30,100,112 |
+> | Frontier cand_02284 | £10,225,835 | 24,553 | £29,187,253 |
+> |
+
+
+## 5b. GenAI — LLM-judge evaluation of the governance Knowledge Assistant (MLflow GenAI)
+
+Job *Governance Assistant — LLM-judge evaluation* (`src/04_models/production/evaluate_governance_assistant.py`). Ground truth is read from Unity Catalog and MLflow, not typed by hand. `baseline` = the same questions to Claude with no documents (the GenAI ablation).
+
+**Pass rate per scorer: no-retrieval baseline vs Knowledge Assistant**
+
+```sql
+SELECT * FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.governance_assistant_eval_summary ORDER BY scorer, system
+```
+| eval_run_id | evaluated_at | system | scorer | pass_rate | n | n_judge_errors | median_latency_ms | retrieval_lift_pp |
+|---|---|---|---|---|---|---|---|---|
+| f09b11f4-392a-4280-92e4-fcf3a70f2317 | 2026-10-13T18:55:12.628Z | baseline | cites_source | 0.047619047619047616 | 21 | 0 | 4773.0 |  |
+| f09b11f4-392a-4280-92e4-fcf3a70f2317 | 2026-10-13T18:55:12.628Z | knowledge_assistant | cites_source | 1.0 | 21 | 0 | 5444.0 | 95.23809523809523 |
+| f09b11f4-392a-4280-92e4-fcf3a70f2317 | 2026-10-13T18:55:12.628Z | baseline | correctness | 0.09523809523809523 | 21 | 0 | 4773.0 |  |
+| f09b11f4-392a-4280-92e4-fcf3a70f2317 | 2026-10-13T18:55:12.628Z | knowledge_assistant | correctness | 0.7619047619047619 | 21 | 0 | 5444.0 | 66.66666666666666 |
+| f09b11f4-392a-4280-92e4-fcf3a70f2317 | 2026-10-13T18:55:12.628Z | baseline | no_deploy_authority | 1.0 | 21 | 0 | 4773.0 |  |
+| f09b11f4-392a-4280-92e4-fcf3a70f2317 | 2026-10-13T18:55:12.628Z | knowledge_assistant | no_deploy_authority | 0.9523809523809523 | 21 | 0 | 5444.0 | -4.761904761904767 |
+| f09b11f4-392a-4280-92e4-fcf3a70f2317 | 2026-10-13T18:55:12.628Z | baseline | relevance_to_query | 0.42857142857142855 | 21 | 0 | 4773.0 |  |
+| f09b11f4-392a-4280-92e4-fcf3a70f2317 | 2026-10-13T18:55:12.628Z | knowledge_assistant | relevance_to_query | 1.0 | 21 | 0 | 5444.0 | 57.14285714285714 |
+| f09b11f4-392a-4280-92e4-fcf3a70f2317 | 2026-10-13T18:55:12.628Z | baseline | safety | 1.0 | 21 | 0 | 4773.0 |  |
+| f09b11f4-392a-4280-92e4-fcf3a70f2317 | 2026-10-13T18:55:12.628Z | knowledge_assistant | safety | 1.0 | 21 | 0 | 5444.0 | 0.0 |
+
+**Eval set by category**
+
+```sql
+SELECT category, count(*) AS questions FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.governance_assistant_eval_set GROUP BY category ORDER BY category
+```
+| category | questions |
+|---|---|
+| fairness | 1 |
+| guard_rail | 2 |
+| intended_use | 1 |
+| model_registry | 4 |
+| model_specification | 4 |
+| pricing_policy | 5 |
+| validation_metric | 4 |
 
 
 ## 6. Genie — natural-language Q&A over the governed tables (Conversation API)
@@ -416,14 +602,14 @@ ORDER BY `Region` ASC
 | South West | 9417 | 42108.441223319525 |
 | Wales | 6211 | 44324.900982128485 |
 | Yorkshire | 15451 | 42594.09403922076 |
-Genie: There are **7 regions** in the results, with **London** having the most commercial policies at **131,676** and **Wales** the fewest at **6,211**. Examples include:
-- **London** — **131,676** policies, average annual premium **43,427.04**
-- **Midlands** — **31,381** policies, average annual premium **43,649.74**
-- **North West** — **44,084** policies, average annual premium **44,132.30**
-- **Scotland** — **18,686** policies, average annual premium **43,249.00**
-- **Wales** — **6,211** policies, average annual premium **44,324.90**
+Genie: There are **7 regions** in the results, with **London** having the most commercial policies at **131,676** and an average annual premium of **43,427.04**. Examples include:
+- **London** — **131,676** policies; average annual premium **43,427.04**
+- **North West** — **44,084** policies; average annual premium **44,132.30**
+- **Midlands** — **31,381** policies; average annual premium **43,649.74**
+- **Scotland** — **18,686** policies; average annual premium **43,249.00**
+- **Yorkshire** — **15,451** policies; average annual premium **42,594.09**
 
-Average annual premiums are fairly close across regions, ranging from **42,108.44** in the **South West** to **44,324.90** in **Wales**.
+Across the regions shown, average annual premiums range from **42,108.44** in **South West** to **44,324.90** in **Wales**, while policy counts range from **6,211** in **Wales** to **131,676** in **London**.
 
 
 _Status: COMPLETED_
@@ -435,21 +621,20 @@ Generated SQL (note `MEASURE()` over the metric view):
 SELECT
   `Driver Age Band`,
   MEASURE(`Expected Profit Hold`) AS `Expected Profit Hold`,
-  MEASURE(`Expected Profit Optimised`) AS `Expected Profit Optimised`
+  MEASURE(`Expected Profit Optimised`) AS `Expected Profit Optimised`,
+  MEASURE(`Profit Uplift`) AS `Profit Uplift`
 FROM `lr_pricing_v2_aws_us_catalog`.`pricing_workbench_gen2`.`mv_price_optimisation`
 WHERE `Driver Age Band` IS NOT NULL
 GROUP BY ALL
 ORDER BY `Driver Age Band` ASC
 ```
-| Driver Age Band | Expected Profit Hold | Expected Profit Optimised |
-|---|---|---|
-| 25-70 | 6988126.1 | 7706846.699999999 |
-| 70+ | 303253.06 | 332535.39 |
-| U25 | 2127785.0 | 2247565.6799999997 |
+| Driver Age Band | Expected Profit Hold | Expected Profit Optimised | Profit Uplift |
+|---|---|---|---|
+| 25-70 | 6988126.1 | 7706846.699999999 | 718720.6 |
+| 70+ | 303253.06 | 332535.39 | 29282.33 |
+| U25 | 2127785.0 | 2247565.6799999997 | 119780.69 |
 
-Genie: Expected profit is higher under the **optimised motor price plan** than under **holding prices** in all 3 driver age bands. By age band: - **25-70:** hold **6,988,126.10** vs optimised **7,706,846.70** - **70+:** hold **303,253.06** vs optimised **332,535.39** - **U25:** hold **2,127,785.00** vs optimised **2,247,565.68**
-
-The **25-70** band has the highest expected profit under both approaches, and the uplift from optimisation is positive in every age band shown.
+Genie: The optimised motor price plan shows higher expected profit than holding prices in **all 3 driver age bands**. For **25-70**, expected profit rises from **6,988,126.10** to **7,706,846.70** (**+718,720.60**); for **70+**, it rises from **303,253.06** to **332,535.39** (**+29,282.33**); and for **U25**, it rises from **2,127,785.00** to **2,247,565.68** (**+119,780.69**).
 
 ## 6c. Agent Bricks — governance Knowledge Assistant and Pricing Supervisor (live calls)
 
@@ -466,25 +651,23 @@ Built by `src/04_models/production/agent_bricks_setup.py` (job *Build — Agent 
 
 **Question to the governance Knowledge Assistant:** What validation and fairness evidence does the governance pack give for the current frequency model, and which features does it rely on?
 
-**Answer** (16.8s):
+**Answer** (10.9s):
 
-> The governance packs provide comprehensive validation and fairness evidence for the frequency models across multiple versions. Here's what they document:
+> Based on the governance packs provided, here is the validation and fairness evidence for the frequency model:
 > 
 > ## Validation Evidence
 > 
 > 
 > 
-> The freq_glm model predicts the expected number of claims per policy per year and was trained on 50,000 policy records from the Modelling Mart, logging a GINI of 0.1383 on the held-out test set.
+> The model achieves a Gini of 0.138, meaning it ranks policies by expected claim frequency materially better than random, with an acceptance threshold for deployment of 0.20.
 > 
 >  
 > 
-> A Gini of 0.138 means the model ranks policies by expected claim frequency materially better than random, with an acceptance threshold for deployment of 0.20.
+> The 5-year actual claim experience strongly supports the pricing direction, with male-led businesses recording an average claim count of 0.979 vs 0.906 for female-led—a 7.9% higher observed frequency, which closely mirrors the model's predicted gap of 7.2%.
 > 
+>  
 > 
-> 
-> 
-> 
-> Feature importance is dominated by the expected risk drivers - no unexpected factors.
+> Average incurred losses are also higher for male-led businesses (£21,928 vs £20,137, +8.9%), consistent with the larger sum-insured exposures identified in the proxy analysis.
 > 
 > 
 > 
@@ -492,17 +675,15 @@ Built by `src/04_models/production/agent_bricks_setup.py` (job *Build — Agent 
 > 
 > 
 > 
-> Protected-characteristic data (age, sex, ethnicity, disability, religion) is not used as a model feature.
+> Protected-characteristic data (age, sex, ethnicity, disability, religion) is not used as a model feature, and proxies are monitored but not formally audited in the pack—a dedicated fairness review is run quarterly by the Pricing Analytics team in collaboration with Compliance.
 > 
->  However, the packs reveal a significant fairness finding: 
+>  
 > 
-> Female-led businesses receive a mean predicted frequency metric of 0.914 and an average premium of £1,029.60, while male-led businesses score 0.985 and pay £1,109.05 - a 7.7% frequency uplift and a £79.45 (7.7%) premium differential in favour of female policyholders.
+> The disparate impact threshold uses the 4/5ths rule on conversion (demand) and on referral rate (fraud).
 > 
+>  However, 
 > 
-> 
-> 
-> 
-> The 5-year actual claim experience strongly supports the pricing direction, with male-led businesses recording an average claim count of 0.983 per policy versus 0.917 for female-led - a 7.2% higher observed frequency, almost exactly matching the model's 7.7% predicted gap.
+> director_gender is not listed as a monitored proxy, which is a gap given the premium differential identified.
 > 
 > 
 > 
@@ -510,31 +691,21 @@ Built by `src/04_models/production/agent_bricks_setup.py` (job *Build — Agent 
 > 
 > 
 > 
-> The proxy path is dominated by two commercial-scale variables: annual_turnover (F: £949k vs M: £1.22m) and sum_insured (F: £4.51m vs M: £5.81m), with male-led firms in the portfolio being systematically larger businesses, and both turnover and sum insured being legitimate, high-weight rating factors in a frequency GLM.
+> The proxy path is most clearly visible in two features: industry_risk_tier_encoded (Male: 1.716 vs Female: 1.497, a 15.5% higher tier) and annual_turnover (Male: £1,204,859 vs Female: £944,973, a 27.5% higher turnover). Sum insured follows the same direction (Male: £5.74M vs Female: £4.49M, +27.9%), and CCJ count is also elevated for male directors (1.274 vs 0.920, +38.5%).
 > 
 >  
 > 
-> Industry_risk_tier_encoded also differs (F: 1.50 vs M: 1.72), suggesting male-led firms cluster in higher-risk SIC tiers.
-> 
-> 
-> 
-> ## Monitoring Gaps
-> 
-> 
-> 
-> Director_gender is not listed as a monitored proxy, which is a gap given the premium differential identified.
-> 
->  
-> 
-> Automated disparate-impact scoring is not yet wired, with manual attestation by the Chief Actuary being the current control, and a dedicated fairness notebook scheduled for a subsequent iteration.
+> Both turnover and sum insured are legitimate, high-weight rating factors in a frequency GLM.
 
 **Question to the Pricing Supervisor (Agent Bricks):** Is the optimised motor price plan ready to deploy? Give the expected profit vs holding prices from the metric views, and check the pricing constraint policy for what must hold before deployment.
 
 Tools called: `pricing_kpis, governance_assistant`
 
-**Answer** (48.0s):
+**Answer** (44.4s):
 
-> I'll help you assess deployment readiness by checking the expected profit impact and the constraint policy requirements. Let me gather this information from the relevant sources.
+> I'll help you assess whether the optimised motor price plan is ready to deploy by checking both the expected profit impact and the deployment constraints.
+> 
+> Let me start by querying the expected profit comparison between optimised and holding prices:
 > 
 > <name>pricing_kpis</name>
 > 
@@ -544,33 +715,79 @@ Tools called: `pricing_kpis, governance_assistant`
 > 
 > <name>Bricksurance Pricing Supervisor (gen2)</name>
 > 
+> Now let me check the pricing constraint policy for deployment requirements:
+> 
 > <name>Bricksurance Model Governance Assistant (gen2)</name>
 > 
-> The pricing constraint policy is enforced by the solver (optimisation_solver.py) and is bound by it; a future agent cannot bypass it — the deployment gate enforces the corridor server-side.
+> The pricing constraint policy IS the pricing policy, and the solver (optimisation_solver.py) is bound by it; a future agent cannot bypass it — the deployment gate enforces the corridor server-side.
 > 
-> The key requirements that must be satisfied before deployment are:
+> Before deploying an optimised price plan, several key requirements and constraints must be satisfied:
 > 
 > **Hard Constraints (Solve-Time Enforced):**
 > 
-> The deviation corridor and segment caps set the solver's per-segment factor bounds, and the deploy gate re-checks the corridor server-side. A factor outside them cannot be produced or deployed.[^0VQK-1] Specifically, the deviation corridor requires never pricing below 85% of technical position and never pricing above 115% of technical position, with breaches rejected rather than warned.[^0VQK-2]
+> The deviation corridor and segment caps set the solver's per-segment factor bounds, and the deploy gate re-checks the corridor server-side. A factor outside them cannot be produced or deployed.[^v1Y2-1] Specifically, the deviation corridor never allows pricing below 85% of the technical position or above 115% of the technical position, and breaches are rejected, not warned.[^v1Y2-2]
 > 
-> Per-segment rate-change caps apply by age-vehicle band, with a maximum increase of 10% and maximum decrease of 12%, plus optional per-segment overrides (for example, U25 drivers are capped at 6% increases).[^0VQK-3]
-> 
-> **Constraints Enforced by Construction:**
-> 
-> Forbidden signals are excluded by construction — the optimised factor is keyed only on the age×vehicle segment, so protected characteristics are never optimisation levers in the first place; proxy correlation is then verified post-solve by the fairness job.[^0VQK-4]
+> Per-segment rate-change caps limit how far the book may move in one optimisation cycle, with a maximum increase of 10.0% and maximum decrease of 12.0% by age-vehicle band.[^v1Y2-3] Additionally, U25 drivers have tighter rate-change caps with a maximum increase of 6.0%.[^v1Y2-4]
 > 
 > **Renewal Rule (GIPP):**
 > 
-> The renewal solver prices each renewal as min(prior × factor, equivalent_new_business), so a renewal can NEVER exceed its fresh new-business quote — GIPP holds by construction, per policy.[^0VQK-5]
+> The renewal solver prices each renewal as min(prior × factor, equivalent_new_business), so a renewal can NEVER exceed its fresh new-business quote — GIPP holds by construction.[^v1Y2-5]
 > 
-> **Deployment Gate:**
+> **Governance & Approval:**
 > 
-> The corridor (±15% of technical) and per-segment caps are hard-enforced at solve + deploy.[^0VQK-6] The deploy gate holds server-side — /deploy re-validates every factor against the corridor before stamping — a future agent cannot talk its way past it.[^0VQK-7]
+> The caller must be in `ADMIN_USERS` RBAC.[^v1Y2-6] On top of that the ±corridor is re-checked server-side before any write, so no prompt or agent can bypass it.
 > 
-> Additionally, fair-value evidence pack is required before deploy.[^0VQK-8]
+> **Audit & Deployment:**
 > 
-> [^0VQK-1]: # # ENFORCEMENT MODEL — be honest about HOW each rule below binds (Phase 1, motor # new-business factors): #   * SOLVE-TIME ENFORCED (hard): deviation_corridor + segment_caps — they set the #     solver's per-segment factor bounds, and the deploy gate re-checks the #     corridor server-side. A factor outside them cannot be produced or deployed. [pricing_constraint_policy.md](https://fevm-lr-pricing-v2-aws-us.cloud.databricks.com/ajax-api/2.0/fs/files/Volumes/lr_pricing_v2_aws_us_catalog/pricing_workbench_gen2/governance_docs/pricing_constraint_policy.md#:~:text=%23%0A%23%20ENFORCEMENT%20MODEL%20%E2%80%94%20be%20honest%20about%20HOW%20each%20rule%20below%20binds%20%28Phase%201%2C%20motor%0A%23%20new-busine
+> Every solve and every deploy writes an immutable `audit_log` row; the factor set is stamped to `optimisation_deployment`; constraints are versioned in git.[^v1Y2-7] Any number traces to its constraint version + inputs.
+> 
+> [^v1Y2-1]: # # ENFORCEMENT MODEL — be honest about HOW each rule below binds (Phase 1, motor # new-business factors): #   * SOLVE-TIME ENFORCED (hard): deviation_corridor + segment_caps — they set the #     solver's per-segment factor bounds, and the deploy gate re-checks the #     corridor server-side. A factor outside them cannot be produced or deployed. [pricing_constraint_policy.md](https://fevm-lr-pricing-v2-aws-us.cloud.databricks.com/ajax-api/2.0/fs/files/Volumes/lr_pricing_v2_aws_us_catalog/pricing_workbench_gen2/governance_docs/pricing_constraint_policy.md#:~:text=%23%0A%23%20ENFORCEMENT%20MODEL%20%E2%80%94%20be%20honest%20about%20HOW%20each%20rule%20below%20binds%20%28Phase%201%2C%20motor%0A%23%20new-business%20fac
+
+
+## 6d. Governance — agent audit trail (every AI explanation, next to the price it reviewed)
+
+Job *Governance — agent audit trail sync* (`src/08_governance/agent_audit_trail.py`): Agent Bricks MLflow traces + Agent Framework AI Gateway inference tables → `v_agent_audit_trail`, KPIs in the `mv_agent_audit` metric view.
+
+**mv_agent_audit**
+
+```sql
+SELECT `Agent Layer`, `Agent`, MEASURE(`Interactions`) AS interactions, MEASURE(`Quote-Level Explanations`) AS quote_explanations, MEASURE(`Governance Pack Reviews`) AS pack_reviews, round(MEASURE(`Average Latency Seconds`),1) AS avg_latency_s FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.mv_agent_audit GROUP BY ALL ORDER BY interactions DESC
+```
+| Agent Layer | Agent | interactions | quote_explanations | pack_reviews | avg_latency_s |
+|---|---|---|---|---|---|
+| Agent Bricks | Bricksurance Model Governance Assistant (gen2) | 24 | 0 | 1 | 5.6 |
+| Agent Framework | pwg2_chat_agent · ask_the_book | 16 | 0 | 0 | 36.3 |
+| Agent Framework | pwg2_chat_agent | 14 | 0 | 0 | 42.7 |
+| Agent Framework | pwg2_chat_agent · explain | 13 | 0 | 0 | 53.8 |
+| Agent Framework | pwg2_chat_agent · bias_investigator | 12 | 0 | 7 | 68.7 |
+| Agent Framework | pwg2_chat_agent · rate_change | 8 | 0 | 0 | 59.5 |
+| Agent Framework | pwg2_governance_agent | 6 | 0 | 6 | 50.3 |
+| Agent Framework | pwg2_chat_agent · recommender | 5 | 0 | 0 | 26.1 |
+| Agent Framework | pwg2_chat_agent · drift_monitor | 5 | 0 | 0 | 50.2 |
+| Agent Framework | pwg2_chat_agent · model_review | 3 | 0 | 3 | 53.1 |
+| Agent Framework | pwg2_chat_agent · price_explainer | 3 | 0 | 0 | 25.7 |
+| Agent Framework | pwg2_chat_agent · model_risk_narrator | 2 | 0 | 0 | 22.6 |
+| Agent Bricks | Bricksurance Pricing Supervisor (gen2) | 2 | 1 | 0 | 40.8 |
+| Agent Framework | pwg2_chat_agent · drift_sentinel | 1 | 0 | 0 | 22.2 |
+| Agent Framework | pwg2_chat_agent · committee_scribe | 1 | 0 | 0 | 23.7 |
+
+**An explanation linked to the quote and price plan it reviewed**
+
+```sql
+SELECT agent, request_time, reviewed_quote_id, reviewed_quote_technical_premium, reviewed_quote_offered_premium, plan_in_force_objective, round(plan_in_force_profit_uplift,0) AS plan_profit_uplift, tools_called, substr(answer, 1, 300) AS answer_start FROM lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.v_agent_audit_trail WHERE reviewed_quote_id IS NOT NULL ORDER BY request_time DESC LIMIT 3
+```
+| agent | request_time | reviewed_quote_id | reviewed_quote_technical_premium | reviewed_quote_offered_premium | plan_in_force_objective | plan_profit_uplift | tools_called | answer_start |
+|---|---|---|---|---|---|---|---|---|
+| Bricksurance Pricing Supervisor (gen2) | 2026-10-13T18:57:21.348Z | MQ-00043750 | 586.02 | 746.22 | expected_profit | 867784.0 | ["examples","lr_pricing_v2_aws_us_catalog__pricing_workbench_gen2__explain_price"] | ## Pricing Breakdown for Motor Quote MQ-00043750
+
+**Customer Profile:**
+- Segment: 25-70 · grpMid
+- Driver age: 55 years
+- Vehicle group: 23
+
+**Technical Price (Break-even):** £586.02
+- Calculated using champion models: freq_glm_motor × sev_glm_motor
+- This is the pure risk cost before any loadings  |
 
 
 ## 7. Databricks App — surfaced to the business

@@ -509,7 +509,8 @@ holdout_metrics = []
 try:
     # Reuse the deterministic 20% split by hashing the key column — this gives
     # the SAME held-out rows regardless of how the version was originally trained.
-    holdout_mask = (pdf_portfolio[key_col].astype(str).apply(lambda s: abs(hash(s)) % 100) >= 80).values
+    import zlib  # stable across processes; Python's hash() is salted per run
+    holdout_mask = (pdf_portfolio[key_col].astype(str).apply(lambda s: zlib.crc32(str(s).encode()) % 100) >= 80).values
 
     if family == "freq_glm" and "claim_count_5y" in pdf_portfolio.columns:
         y = pdf_portfolio.loc[holdout_mask, "claim_count_5y"].fillna(0).astype(float).values
@@ -542,7 +543,8 @@ try:
                  + df.get("claim_count_5y", pd.Series(0, index=df.index)).fillna(0).astype(float) * 0.20
                  + df.get("loss_ratio_5y", pd.Series(0, index=df.index)).fillna(0).astype(float) * 0.05)
             p = 1.0 / (1.0 + np.exp(-z))
-            r = df[key_col].astype(str).apply(lambda s: (abs(hash(s)) % 1_000_000) / 1_000_000.0).values
+            import zlib  # stable across processes; Python's hash() is salted per run
+            r = df[key_col].astype(str).apply(lambda s: (zlib.crc32(str(s).encode()) % 1_000_000) / 1_000_000.0).values
             return (r < p.values).astype(int)
         y = _synth_fraud(pdf_portfolio.loc[holdout_mask])
         if 0 < y.sum() < len(y):

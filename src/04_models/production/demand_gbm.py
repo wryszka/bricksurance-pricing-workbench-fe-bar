@@ -127,7 +127,8 @@ for c in FEATURES:
         pdf[c] = pdf[c].astype(int)
 
 # Build train/test mask from the SAME pdf that was loaded — guarantees alignment.
-train_mask = pdf["transaction_id"].apply(lambda s: abs(hash(s)) % 100 < 80).values
+import zlib  # stable across processes; Python's hash() is salted per run
+train_mask = pdf["transaction_id"].apply(lambda s: zlib.crc32(str(s).encode()) % 100 < 80).values
 X = pdf[FEATURES]
 y = pdf["converted"].astype(int)
 X_train, y_train = X[train_mask], y[train_mask]

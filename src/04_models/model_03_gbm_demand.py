@@ -97,7 +97,8 @@ print(f"Total quotes: {len(pdf)}, Conversion rate: {pdf['converted_flag'].mean()
 
 # COMMAND ----------
 
-pdf["split_hash"] = pdf["transaction_id"].apply(lambda x: abs(hash(x)) % 100)
+import zlib  # stable across processes; Python's hash() is salted per run
+pdf["split_hash"] = pdf["transaction_id"].apply(lambda x: zlib.crc32(str(x).encode()) % 100)
 train_pdf = pdf[pdf["split_hash"] < 80].copy()
 test_pdf = pdf[pdf["split_hash"] >= 80].copy()
 

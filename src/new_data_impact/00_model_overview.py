@@ -267,7 +267,7 @@
 # MAGIC %md
 # MAGIC ## Unity Catalog Artefacts
 # MAGIC
-# MAGIC All outputs are persisted to `lr_serverless_aws_us_catalog.pricing_upt`:
+# MAGIC All outputs are persisted to `lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2`:
 # MAGIC
 # MAGIC ### Enrichment Reference Table
 # MAGIC
@@ -321,8 +321,8 @@
 # MAGIC
 # MAGIC | Model | UC Path | Type |
 # MAGIC |---|---|---|
-# MAGIC | Frequency GLM — Standard | `lr_serverless_aws_us_catalog.pricing_upt.impact_glm_frequency_standard` | Poisson GLM (pyfunc) |
-# MAGIC | Frequency GLM — Enriched | `lr_serverless_aws_us_catalog.pricing_upt.impact_glm_frequency_enriched` | Poisson GLM (pyfunc) |
+# MAGIC | Frequency GLM — Standard | `lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.impact_glm_frequency_standard` | Poisson GLM (pyfunc) |
+# MAGIC | Frequency GLM — Enriched | `lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.impact_glm_frequency_enriched` | Poisson GLM (pyfunc) |
 
 # COMMAND ----------
 

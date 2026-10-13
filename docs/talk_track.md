@@ -70,7 +70,7 @@ every table is real (synthetic) data, every model is trained and serving.
 > before clicking Approve."
 
 **Headline value to land:** Geospatial enrichment lifts the model's Gini from
-0.11 to 0.25 — that's the discrimination improvement visible in the Model Factory
+0.11 to 0.24 — that's the discrimination improvement visible in the Model Factory
 leaderboard. Not a prototype claim; it's in the live data.
 
 **Expected questions:**

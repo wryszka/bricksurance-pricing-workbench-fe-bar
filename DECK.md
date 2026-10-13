@@ -25,7 +25,7 @@
 
 ## Slide 3: What we built — one loop, one platform
 
-**Raw data** → **Lakeflow** (ingest + 14 quality rules) → **Unity Catalog** (governed, lineage, audit, **metric views** as the one definition of every KPI) → **Lakebase** (live features) → **ML** (frequency, severity, demand, fraud, elasticity + optimiser) → **Agent Bricks** (Supervisor front door + governance Knowledge Assistant, over Agent Framework agents) → **Genie** (plain-English questions over the metric views) → **Databricks App** (review, approve, deploy)
+**Raw data** → **Lakeflow** (ingest + 14 quality rules) → **Unity Catalog** (governed, lineage, audit, **metric views** as the one definition of every KPI) → **Lakebase** (live features) → **ML** (the insurer's models; here reference frequency, severity, demand, fraud and elasticity models + optimiser, with drift-triggered retraining) → **Agent Bricks** (Supervisor front door + governance Knowledge Assistant, over Agent Framework agents) → **Genie** (plain-English questions over the metric views) → **Databricks App** (review, approve, deploy)
 
 The same governed data flows through every step, with no copies and no hand-offs.
 
@@ -33,9 +33,10 @@ The same governed data flows through every step, with no copies and no hand-offs
 
 ## Slide 4: Value 1 — better calculations
 
-- Real external data lifts model **Gini 0.11 → 0.25**
+- Adding real UK postcode data lifts a reference model's **Gini 0.11 → 0.24** (synthetic home book), measured in one governed run
+- Every new factor gets a lift test with a leakage guard, which caught a claims-based factor inflating its own lift
 - The demand model **recovers the true price sensitivity** in the test data (−6.0 true vs −5.6 recovered)
-- The optimiser finds **+9.2% expected profit** inside ±15% of the break-even price (demonstrated, synthetic book)
+- The reference optimiser finds **+9.2% expected profit** inside ±15% of the break-even price (demonstrated, synthetic book)
 
 **Sizing:** each 1 point of loss ratio on a £500m book = **£5m a year**. A pilot on your data measures your real gain.
 
@@ -67,6 +68,7 @@ The same governed data flows through every step, with no copies and no hand-offs
 - No price goes live without a **named human approval**; the corridor is re-checked at deploy
 - A decision record per change: models, versions, data snapshot, approver, fair-value result
 - A GIPP-enforced renewal solver; when a plan fails the fair-value screen, the AI recommender advises **REVISE BEFORE DEPLOY**
+- Every AI explanation is stored next to the price it reviewed; an LLM judge scores the governance assistant against ground truth (76% correct vs 10% without the documents)
 
 **Sizing:** audit and remediation effort per review cycle replaced by one query; lower GIPP / Consumer Duty risk.
 
@@ -85,7 +87,7 @@ The same governed data flows through every step, with no copies and no hand-offs
 
 | Value | Demonstrated in the prototype | How to size it for your book |
 |---|---|---|
-| Better calculations | Gini 0.11 → 0.25; true price sensitivity recovered; +9.2% expected profit (synthetic) | 1 loss-ratio point on £500m = £5m/yr |
+| Better calculations | Gini 0.11 → 0.24; true price sensitivity recovered; +9.2% expected profit (synthetic) | 1 loss-ratio point on £500m = £5m/yr |
 | Fresher data | One pipeline from data to live price; ~30–40 min full rebuild | Months of price lag × adverse selection |
 | More live features | 43 motor features per quote, ~240 ms | Lift from factors you can't use today |
 | Full governance | Lineage, audit, human gate, decision records, fair-value screen, GIPP | Audit hours saved, regulatory risk avoided |
@@ -95,6 +97,7 @@ The same governed data flows through every step, with no copies and no hand-offs
 
 ## Slide 10: Why Databricks, and the next step
 
+- **Your models, our foundation**: the insurer's actuaries own the models and assumptions; Databricks runs, governs and evidences them
 - **One platform** for data, models, serving, agents, BI and the app, so lineage is unbroken
 - **Open and deployable as code**; works alongside existing rating engines
 - **Part of Bricksurance**, an open-source insurance operating system on Databricks covering pricing, underwriting, claims, reserving, reinsurance, IFRS 17 and Solvency II

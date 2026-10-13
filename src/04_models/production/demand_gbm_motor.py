@@ -108,7 +108,8 @@ for c in FEATURES:
     if pdf[c].dtype == "bool":
         pdf[c] = pdf[c].astype(int)
 
-mask = pdf[KEY].apply(lambda s: abs(hash(s)) % 100 < 80).values
+import zlib  # stable across processes; Python's hash() is salted per run
+mask = pdf[KEY].apply(lambda s: zlib.crc32(str(s).encode()) % 100 < 80).values
 X = pdf[FEATURES]; y = pdf["accepted"].astype(int)
 X_train, y_train = X[mask], y[mask]
 X_test,  y_test  = X[~mask], y[~mask]

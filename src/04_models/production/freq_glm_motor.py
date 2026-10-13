@@ -99,7 +99,8 @@ X = pd.get_dummies(_prep_raw(training_pdf), drop_first=True, dtype=float).fillna
 y = training_pdf[TARGET].fillna(0).astype(float)
 
 # Mask derived from training_pdf itself so X / y / mask are always aligned.
-mask = training_pdf[KEY].apply(lambda s: abs(hash(s)) % 100 < 80).values
+import zlib  # stable across processes; Python's hash() is salted per run
+mask = training_pdf[KEY].apply(lambda s: zlib.crc32(str(s).encode()) % 100 < 80).values
 X_train, y_train = X[mask], y[mask]
 X_test,  y_test  = X[~mask], y[~mask]
 print(f"Train: {len(X_train):,}   Test: {len(X_test):,}")

@@ -38,8 +38,10 @@ import pandas as pd
 import numpy as np
 import mlflow.deployments
 
-CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "pricing_workbench_gen2"
+dbutils.widgets.text("catalog_name", "lr_pricing_v2_aws_us_catalog")
+dbutils.widgets.text("schema_name", "pricing_workbench_gen2")
+CATALOG = dbutils.widgets.get("catalog_name")
+SCHEMA = dbutils.widgets.get("schema_name")
 spark.sql(f"USE CATALOG {CATALOG}")
 spark.sql(f"USE SCHEMA {SCHEMA}")
 

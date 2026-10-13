@@ -1,0 +1,25 @@
+# Agent audit trail — syncs every Agent Bricks interaction (MLflow traces) into Unity
+# Catalog and rebuilds v_agent_audit_trail + mv_agent_audit, which also cover the Agent
+# Framework agents' AI Gateway inference tables. Incremental; runs every 6 hours.
+resources:
+  jobs:
+    agent_audit_trail:
+      name: "Governance — agent audit trail sync (gen2)"
+      parameters:
+        - name: catalog_name
+          default: ${var.catalog_name}
+        - name: schema_name
+          default: ${var.schema_name}
+      schedule:
+        quartz_cron_expression: "0 0 */6 * * ?"
+        timezone_id: "Europe/London"
+        pause_status: UNPAUSED
+      tasks:
+        - task_key: sync_agent_audit_trail
+          notebook_task:
+            notebook_path: ../src/08_governance/agent_audit_trail.py
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            client: "5"

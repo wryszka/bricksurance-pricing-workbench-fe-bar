@@ -1,27 +1,40 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Challenger Comparison — Baseline vs +Urban Score vs +Both Factors
+# MAGIC # Challenger Comparison — does each new real-data factor earn its place?
 # MAGIC
 # MAGIC Answers the business question: **does adding the derived factors actually
-# MAGIC make the model better?** Trains three Poisson GLMs for claim frequency, each
-# MAGIC an ablation of the derived-factors set, and reports Gini on a held-out
+# MAGIC make the model better?** Trains five Poisson GLMs for claim frequency, each
+# MAGIC an ablation of the real-UK-data factor set, and reports Gini on a held-out
 # MAGIC sample plus per-factor lift attribution.
 # MAGIC
-# MAGIC **Ablation ladder:**
-# MAGIC | # | Feature set                                              | Cohort tag       |
-# MAGIC |---|----------------------------------------------------------|------------------|
-# MAGIC | 1 | Baseline features only                                   | `baseline`       |
-# MAGIC | 2 | Baseline + `urban_score`                                 | `plus_urban`     |
-# MAGIC | 3 | Baseline + `urban_score` + `neighbourhood_claim_frequency` | `plus_both`      |
+# MAGIC The GLMs are **reference models on a synthetic book**. The point is the platform
+# MAGIC pattern: any new data source gets a governed, reproducible lift test logged to MLflow
+# MAGIC and Unity Catalog before an actuary decides whether to use it.
 # MAGIC
-# MAGIC **Attribution:**
-# MAGIC - urban_score lift        = Gini(plus_urban) - Gini(baseline)
-# MAGIC - claim_frequency lift    = Gini(plus_both)  - Gini(plus_urban)
-# MAGIC - Total lift              = Gini(plus_both)  - Gini(baseline)
+# MAGIC **Ablation ladder:**
+# MAGIC | # | Feature set                                        | Cohort tag         |
+# MAGIC |---|----------------------------------------------------|--------------------|
+# MAGIC | 1 | Baseline features only                             | `baseline`         |
+# MAGIC | 2 | + `urban_score` (ONS RUC + IMD living environment) | `plus_urban`       |
+# MAGIC | 3 | + `is_coastal` (ONS local-authority flag)          | `plus_coastal`     |
+# MAGIC | 4 | + `deprivation_composite` (IMD domains)            | `plus_deprivation` |
+# MAGIC | 5 | + `neighbourhood_claim_frequency` (credibility)    | `plus_claim_freq`  |
+# MAGIC
+# MAGIC **Attribution, two ways:**
+# MAGIC - *Sequential* (the ladder): each factor's lift = Gini(with it) − Gini(previous cohort).
+# MAGIC   Simple to read, but **order-dependent**: correlated factors (urban areas also claim
+# MAGIC   more) give the shared signal to whichever factor enters first.
+# MAGIC - *Shapley* (order-independent): each factor's average marginal Gini lift over every
+# MAGIC   subset of the other real-data factors (2⁴ = 16 fits). Written next to the sequential
+# MAGIC   numbers, so the ordering trade-off is measured rather than assumed.
+# MAGIC
+# MAGIC **Leakage guard:** `neighbourhood_claim_frequency` is built from claims, so it is
+# MAGIC recomputed from training-fold claims only before the lift test.
 # MAGIC
 # MAGIC **Outputs:**
-# MAGIC - Three MLflow runs (one per cohort) with tag `challenger_cohort`
+# MAGIC - Five MLflow runs (one per cohort) with tag `challenger_cohort`
 # MAGIC - Summary table `challenger_comparison_latest` consumed by the app
+# MAGIC - `challenger_attribution_shapley`: sequential vs Shapley lift per factor
 
 # COMMAND ----------
 
@@ -34,6 +47,7 @@ fqn = f"{catalog}.{schema}"
 
 # COMMAND ----------
 
+import itertools, math, zlib
 import mlflow
 import numpy as np
 import pandas as pd
@@ -80,7 +94,7 @@ REAL_FACTORS = [
     "neighbourhood_claim_frequency",  # Bühlmann credibility on internal claims
 ]
 
-all_cols = ["policy_id", "claim_count_5y"] + BASELINE_FEATURES + REAL_FACTORS
+all_cols = ["policy_id", "postcode_sector", "claim_count_5y"] + BASELINE_FEATURES + REAL_FACTORS
 
 # Check the derived factors exist in the UPT; fail loudly if not
 upt_cols = set(upt.columns)
@@ -96,10 +110,25 @@ pdf["claim_frequency"] = pdf["claim_count_5y"].fillna(0).astype(float)
 for c in BASELINE_FEATURES + REAL_FACTORS:
     pdf[c] = pd.to_numeric(pdf[c], errors="coerce").fillna(0)
 
-# Deterministic 80/20 split by policy_id hash
-pdf["split_hash"] = pdf["policy_id"].apply(lambda x: abs(hash(x)) % 100)
+# Deterministic 80/20 split by policy_id. zlib.crc32 is stable across processes;
+# Python's built-in hash() is salted per process (PYTHONHASHSEED), which made the
+# earlier split differ on every run.
+pdf["split_hash"] = pdf["policy_id"].apply(lambda x: zlib.crc32(str(x).encode()) % 100)
 train_pdf = pdf[pdf["split_hash"] < 80].copy()
 test_pdf  = pdf[pdf["split_hash"] >= 80].copy()
+# Leakage guard: neighbourhood_claim_frequency is built from claims, so the copy in the
+# UPT includes the holdout policies' own claims. For an honest lift test it is rebuilt
+# here from TRAINING-fold claims only (same Bühlmann K as derive_factors.py), so no
+# holdout label feeds a feature. model_assumption_checks.py measures what the
+# in-sample version would have inflated.
+K_CREDIBILITY = 100
+_overall = train_pdf["claim_frequency"].mean()
+_pc = train_pdf.groupby("postcode_sector")["claim_frequency"].agg(["count", "mean"])
+_z = _pc["count"] / (_pc["count"] + K_CREDIBILITY)
+_oof = _z * _pc["mean"] + (1 - _z) * _overall
+for _df in (train_pdf, test_pdf):
+    _df["neighbourhood_claim_frequency"] = _df["postcode_sector"].map(_oof).fillna(_overall).values
+
 y_train = train_pdf["claim_frequency"].values
 y_test  = test_pdf["claim_frequency"].values
 
@@ -137,7 +166,7 @@ def gini(y_true, y_pred):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Fit three models and collect results
+# MAGIC ## Fit the five cohorts and collect results
 
 # COMMAND ----------
 
@@ -262,3 +291,67 @@ spark.sql(f"""
 """)
 print(f"✓ {summary_table} — {summary_df.count()} rows")
 display(summary_df)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Order-independent attribution (Shapley) vs the sequential ladder
+# MAGIC
+# MAGIC Fits the baseline plus every subset of the four real-data factors on the same
+# MAGIC split, then averages each factor's marginal Gini lift over all orderings.
+# MAGIC The Shapley values sum to the same total lift as the ladder, so the two
+# MAGIC attributions are directly comparable.
+
+# COMMAND ----------
+
+def _fit_gini(features):
+    fit = sm.GLM(y_train, sm.add_constant(train_pdf[features].values),
+                 family=sm.families.Poisson(link=sm.families.links.Log())).fit()
+    return gini(y_test, fit.predict(sm.add_constant(test_pdf[features].values)))
+
+subset_gini = {}
+for r_ in range(len(REAL_FACTORS) + 1):
+    for combo in itertools.combinations(REAL_FACTORS, r_):
+        subset_gini[frozenset(combo)] = _fit_gini(BASELINE_FEATURES + list(combo))
+
+n_f = len(REAL_FACTORS)
+shapley = {}
+for f_ in REAL_FACTORS:
+    others = [x for x in REAL_FACTORS if x != f_]
+    val = 0.0
+    for r_ in range(len(others) + 1):
+        for combo in itertools.combinations(others, r_):
+            weight = math.factorial(r_) * math.factorial(n_f - r_ - 1) / math.factorial(n_f)
+            val += weight * (subset_gini[frozenset(combo) | {f_}] - subset_gini[frozenset(combo)])
+    shapley[f_] = val
+
+sequential = {r["attribution_factor"]: r["gini"] - results[i - 1]["gini"]
+              for i, r in enumerate(results) if r["attribution_factor"]}
+total_lift_all = subset_gini[frozenset(REAL_FACTORS)] - subset_gini[frozenset()]
+
+attr_rows = [(f_, float(sequential[f_]), float(shapley[f_]),
+              float(shapley[f_] / total_lift_all) if total_lift_all else None,
+              len(subset_gini), str(upt_delta_version), now)
+             for f_ in REAL_FACTORS]
+attr_df = spark.createDataFrame(attr_rows, schema=StructType([
+    StructField("factor", StringType()), StructField("sequential_lift", DoubleType()),
+    StructField("shapley_lift", DoubleType()), StructField("shapley_share_of_total", DoubleType()),
+    StructField("n_subset_fits", IntegerType()), StructField("upt_delta_version", StringType()),
+    StructField("computed_at", TimestampType())]))
+attr_table = f"{fqn}.challenger_attribution_shapley"
+attr_df.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(attr_table)
+spark.sql(f"COMMENT ON TABLE {attr_table} IS 'Per-factor Gini lift: sequential ablation ladder vs order-independent Shapley attribution over all 16 factor subsets'")
+
+with mlflow.start_run(run_name="challenger_attribution_shapley"):
+    mlflow.set_tag("challenger_comparison", "true")
+    mlflow.log_param("n_subset_fits", len(subset_gini))
+    mlflow.log_param("upt_delta_version", upt_delta_version)
+    for f_ in REAL_FACTORS:
+        mlflow.log_metric(f"shapley_lift_{f_}", shapley[f_])
+        mlflow.log_metric(f"sequential_lift_{f_}", sequential[f_])
+
+print(f"Total lift (baseline → all real-data factors): {total_lift_all:+.4f}")
+print(f"{'factor':32s} {'sequential':>11s} {'shapley':>9s}")
+for f_ in REAL_FACTORS:
+    print(f"{f_:32s} {sequential[f_]:+11.4f} {shapley[f_]:+9.4f}")
+display(attr_df)

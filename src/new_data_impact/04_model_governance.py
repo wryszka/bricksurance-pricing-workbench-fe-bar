@@ -9,7 +9,7 @@
 # MAGIC | Field | Value |
 # MAGIC |---|---|
 # MAGIC | **Report Date** | Auto-generated at runtime |
-# MAGIC | **Catalog** | `lr_serverless_aws_us_catalog.pricing_upt` |
+# MAGIC | **Catalog** | `lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2` |
 # MAGIC | **Models in Scope** | GLM Frequency (Standard & Enriched), LightGBM Severity (Standard & Enriched) |
 # MAGIC | **Model Factory** | 50 Poisson GLM specifications |
 # MAGIC | **Intended Audience** | Chief Actuary, Pricing Committee, Internal Audit, Regulatory Submissions |
@@ -43,8 +43,10 @@ dbutils.library.restartPython()
 
 # COMMAND ----------
 
-CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "pricing_workbench_gen2"
+dbutils.widgets.text("catalog_name", "lr_pricing_v2_aws_us_catalog")
+dbutils.widgets.text("schema_name", "pricing_workbench_gen2")
+CATALOG = dbutils.widgets.get("catalog_name")
+SCHEMA = dbutils.widgets.get("schema_name")
 
 spark.sql(f"USE {CATALOG}.{SCHEMA}")
 
@@ -1664,4 +1666,4 @@ print(f"  2. Or: SELECT * FROM list('{VOLUME_PATH}')")
 # MAGIC >
 # MAGIC > Change to `APPROVED` or `REJECTED` upon completion of review.
 # MAGIC >
-# MAGIC > **PDF Report:** Saved to UC volume at `lr_serverless_aws_us_catalog.pricing_upt.reports`
+# MAGIC > **PDF Report:** Saved to UC volume at `lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.reports`

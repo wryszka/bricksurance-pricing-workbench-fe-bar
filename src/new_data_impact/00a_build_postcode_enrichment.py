@@ -18,7 +18,7 @@
 # MAGIC
 # MAGIC All datasets are Open Government Licence (OGL) — free for any use including commercial.
 # MAGIC
-# MAGIC **Output:** `lr_serverless_aws_us_catalog.pricing_upt.postcode_enrichment`
+# MAGIC **Output:** `lr_pricing_v2_aws_us_catalog.pricing_workbench_gen2.postcode_enrichment`
 # MAGIC (~1.5M England live residential postcodes with ~12 enrichment features)
 
 # COMMAND ----------

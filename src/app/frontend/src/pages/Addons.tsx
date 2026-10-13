@@ -71,7 +71,7 @@ export default function Addons() {
           title="New Data Impact"
           description="For data scientists and actuaries: six notebooks that answer 'does adding real external data make pricing models better?'. Builds ~1.5M-row postcode enrichment, trains standard vs enriched models, quantifies the lift."
           audience="data scientists · senior actuaries"
-          tags={['Gini 0.11 → 0.25', 'ONSPD + IMD enrichment', 'Claude review agent', 'Governance PDF']}
+          tags={['Gini 0.11 → 0.24', 'ONSPD + IMD enrichment', 'Claude review agent', 'Governance PDF']}
         />
         <AddonCard
           to="/add-ons/agentic-distribution"

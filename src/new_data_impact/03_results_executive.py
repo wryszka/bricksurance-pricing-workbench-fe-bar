@@ -9,8 +9,10 @@ dbutils.library.restartPython()
 # COMMAND ----------
 
 # Setup — catalog and schema config (hidden in presentation)
-CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "pricing_workbench_gen2"
+dbutils.widgets.text("catalog_name", "lr_pricing_v2_aws_us_catalog")
+dbutils.widgets.text("schema_name", "pricing_workbench_gen2")
+CATALOG = dbutils.widgets.get("catalog_name")
+SCHEMA = dbutils.widgets.get("schema_name")
 
 # COMMAND ----------
 

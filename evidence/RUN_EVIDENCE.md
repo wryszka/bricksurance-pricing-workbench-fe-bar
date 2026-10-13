@@ -105,8 +105,10 @@ End-to-end walkthrough of the deployed app: [Bricksurance — Pricing Workbench 
 - `fraud_gbm`
 - `fraud_gbm_motor`
 - `freq_glm`
+- `freq_glm_drift_challenger` (alias `challenger`; written by the drift job, never promoted automatically)
 - `freq_glm_motor`
 - `governance_agent`
+- `impact_glm_frequency_enriched` / `impact_glm_frequency_standard` (new-data impact study)
 - `pwg2_chat_agent`
 - `pwg2_motor_scorer`
 - `pwg2_motor_scorer_direct`
@@ -119,7 +121,7 @@ End-to-end walkthrough of the deployed app: [Bricksurance — Pricing Workbench 
 
 - **Price optimisation (motor):** expected profit at today's prices £9.42m → optimised **£10.29m, +£868k (+9.2%)**, all nine segments inside the ±15% corridor (solver re-run 2026-10-13, objective = expected_profit; the same uplift as the 2026-09-05 profit-objective runs). Verbatim output: [EXECUTION_OUTPUT.md](EXECUTION_OUTPUT.md).
 - **Closed loop ("did it work?"):** after rolling the book forward one synthetic month under the deployed prices, predicted profit £8.79m vs realised £8.77m (**−0.2%**). Source: live query of `optimisation_advance_result`, 2026-10-12.
-- **New data impact study:** real UK postcode enrichment lifts Gini 0.11 → 0.25 and deviance explained 1.0% → 5.3%. Source: `src/new_data_impact/`.
+- **New data impact study:** real UK postcode enrichment lifts Gini 0.11 → 0.24 and deviance explained 1.1% → 5.1% (re-run live on this workspace, 2026-10-13). Source: `src/new_data_impact/`.
 
 _Regenerate:_ `databricks jobs list-runs`, `databricks serving-endpoints list`, `databricks database list-database-instances`, `databricks api get /api/2.0/genie/spaces` against the deployment profile.
 
@@ -134,3 +136,17 @@ _Regenerate:_ `databricks jobs list-runs`, `databricks serving-endpoints list`, 
 |---|---|---|
 | Knowledge Assistant: Bricksurance Model Governance Assistant (gen2) | `ka-075c42a7-endpoint` | READY |
 | Supervisor Agent: Bricksurance Pricing Supervisor (gen2) | `mas-041c7524-endpoint` | READY |
+
+## Evidence-layer jobs (added 2026-10-13, review pass)
+
+The first runs of four of these were one-time runs of the same notebooks, submitted before the jobs were deployed; all are real runs on this workspace.
+
+| Job | Run id | Trigger | Result |
+|---|---|---|---|
+| Study — new external data impact on pricing models (gen2) | 360064261132018 (one-time) | manual | SUCCESS: frequency Gini 0.1134 standard → 0.2444 enriched |
+| Model evidence — ablation, Shapley attribution, assumption checks (gen2) | 337333641794784 (one-time) | manual | SUCCESS |
+| Governance Assistant — LLM-judge evaluation (gen2) | 1063692521193511 (one-time) | manual | SUCCESS: correctness 76.2% (Knowledge Assistant) vs 9.5% (no-documents baseline), n = 21 |
+| Governance — agent audit trail sync (gen2) | 309137179191613 | manual, then every 6 hours | SUCCESS |
+| Ingest External Data → task `inject_data_variation` only | 1112099804556208 | manual | SUCCESS: writes the raw vendor tables |
+| Drift-triggered retraining (gen2) | 523384991095158 | **TABLE** (fired automatically by the vendor update) | SUCCESS: max PSI 0.057 < 0.2, gate false, retrain skipped |
+| Drift-triggered retraining (gen2), strict gate `psi_threshold = 0.05` | 268625601428607 | manual | SUCCESS: gate true, challenger `freq_glm_drift_challenger` v2 trained, scored against champion v36 on the same holdout (Gini 0.1199 vs 0.1203) and a promotion request filed (*hold*) |

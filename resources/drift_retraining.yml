@@ -1,0 +1,76 @@
+# Drift-triggered retraining: a reusable platform pattern for any registered champion.
+# New vendor data lands (or the gold table changes) → the job fires on the table update →
+# PSI drift check against the champion's training data → if max PSI ≥ threshold, refit the
+# champion's specification as a challenger, compare it with the champion on the same holdout,
+# and file a promotion request for a named human. The @champion alias is never moved
+# automatically. Stand-in model: the reference commercial frequency GLM (freq_glm).
+resources:
+  jobs:
+    drift_retraining:
+      name: "Drift-triggered retraining — challenger + human promotion (gen2)"
+      description: >-
+        Fires when new vendor data or the gold pricing table changes. Measures drift (PSI) of the
+        champion's features against its training data; above the threshold it retrains a challenger,
+        compares it with the champion on the same holdout and raises a promotion request for a human.
+      max_concurrent_runs: 1
+      parameters:
+        - name: catalog_name
+          default: ${var.catalog_name}
+        - name: schema_name
+          default: ${var.schema_name}
+        - name: model_name
+          default: freq_glm
+        - name: psi_threshold
+          default: "0.2"
+        - name: include_pending_vendor_updates
+          default: "true"
+      trigger:
+        pause_status: UNPAUSED
+        table_update:
+          table_names:
+            - ${var.catalog_name}.${var.schema_name}.raw_geospatial_hazard_enrichment
+            - ${var.catalog_name}.${var.schema_name}.raw_credit_bureau_summary
+            - ${var.catalog_name}.${var.schema_name}.raw_market_pricing_benchmark
+            - ${var.catalog_name}.${var.schema_name}.unified_pricing_table_live
+          condition: ANY_UPDATED
+          min_time_between_triggers_seconds: 3600
+
+      tasks:
+        # 1. PSI per champion feature: training data vs the live / pending book
+        - task_key: detect_drift
+          notebook_task:
+            notebook_path: ../src/04_models/production/drift_detect.py
+          environment_key: base
+
+        # 2. Gate: only retrain when the drift check says so
+        - task_key: drift_gate
+          depends_on:
+            - task_key: detect_drift
+          condition_task:
+            op: EQUAL_TO
+            left: "{{tasks.detect_drift.values.drift_detected}}"
+            right: "true"
+
+        # 3. Challenger retrain + like-for-like comparison + promotion request (human decides)
+        - task_key: retrain_challenger
+          depends_on:
+            - task_key: drift_gate
+              outcome: "true"
+          notebook_task:
+            notebook_path: ../src/04_models/production/drift_retrain_challenger.py
+            base_parameters:
+              check_run_id: "{{tasks.detect_drift.values.check_run_id}}"
+              max_psi: "{{tasks.detect_drift.values.max_psi}}"
+              drifted_features: "{{tasks.detect_drift.values.drifted_features}}"
+          environment_key: ml_glm
+
+      environments:
+        - environment_key: base
+          spec:
+            client: "5"
+            dependencies: []
+        - environment_key: ml_glm
+          spec:
+            client: "5"
+            dependencies:
+              - statsmodels

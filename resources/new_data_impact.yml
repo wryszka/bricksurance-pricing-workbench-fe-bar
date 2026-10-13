@@ -1,0 +1,22 @@
+# New-data impact study — "does adding real external data make pricing models better?"
+# Builds a 200,000-policy synthetic book keyed to real English postcodes, then trains
+# standard vs enriched frequency + severity GLMs and a 50-spec GLM factory, logging
+# everything to MLflow + Unity Catalog. Source: src/new_data_impact/.
+resources:
+  jobs:
+    new_data_impact_study:
+      name: "Study — new external data impact on pricing models (gen2)"
+      parameters:
+        - name: catalog_name
+          default: ${var.catalog_name}
+        - name: schema_name
+          default: ${var.schema_name}
+      tasks:
+        - task_key: build_all_models
+          notebook_task:
+            notebook_path: ../src/new_data_impact/01_build_all_models.py
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            client: "5"

@@ -1,0 +1,29 @@
+# Model evidence — the governance pattern for any registered pricing model, run here on
+# the reference GLMs: ablation ladder + order-independent (Shapley) attribution of each
+# real-data factor, then a measured sensitivity run for every modelling assumption.
+resources:
+  jobs:
+    model_evidence:
+      name: "Model evidence — ablation, Shapley attribution, assumption checks (gen2)"
+      parameters:
+        - name: catalog_name
+          default: ${var.catalog_name}
+        - name: schema_name
+          default: ${var.schema_name}
+      tasks:
+        - task_key: challenger_comparison
+          notebook_task:
+            notebook_path: ../src/04_models/challenger_comparison.py
+          environment_key: ml_glm
+        - task_key: assumption_checks
+          depends_on:
+            - task_key: challenger_comparison
+          notebook_task:
+            notebook_path: ../src/04_models/model_assumption_checks.py
+          environment_key: ml_glm
+      environments:
+        - environment_key: ml_glm
+          spec:
+            client: "5"
+            dependencies:
+              - statsmodels
