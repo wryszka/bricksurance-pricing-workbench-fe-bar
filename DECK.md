@@ -66,7 +66,7 @@ The same governed data flows through every step, with no copies and no hand-offs
 - Lineage from source data to model to price, plus an immutable audit log
 - No price goes live without a **named human approval**; the corridor is re-checked at deploy
 - A decision record per change: models, versions, data snapshot, approver, fair-value result
-- A GIPP-enforced renewal solver; an AI recommender that **blocks** plans failing fair value
+- A GIPP-enforced renewal solver; when a plan fails the fair-value screen, the AI recommender advises **REVISE BEFORE DEPLOY**
 
 **Sizing:** audit and remediation effort per review cycle replaced by one query; lower GIPP / Consumer Duty risk.
 
@@ -88,7 +88,7 @@ The same governed data flows through every step, with no copies and no hand-offs
 | Better calculations | Gini 0.11 → 0.25; true price sensitivity recovered; +9.2% expected profit (synthetic) | 1 loss-ratio point on £500m = £5m/yr |
 | Fresher data | One pipeline from data to live price; ~30–40 min full rebuild | Months of price lag × adverse selection |
 | More live features | 43 motor features per quote, ~240 ms | Lift from factors you can't use today |
-| Full governance | Lineage, audit, human gate, decision records, fair-value block, GIPP | Audit hours saved, regulatory risk avoided |
+| Full governance | Lineage, audit, human gate, decision records, fair-value screen, GIPP | Audit hours saved, regulatory risk avoided |
 | Lower licensing | One consumption platform | Current licences minus consumption |
 
 ---
