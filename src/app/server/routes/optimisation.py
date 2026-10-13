@@ -8,8 +8,8 @@ Reads the governed tables the optimisation notebooks write on personal MOTOR:
   solver    → optimisation_factor_table  (bound by optimisation_constraints/default.yaml)
   monitoring→ optimisation_monitoring / _deviation_dist / _constraint_breaches
 
-Every number is traceable to open code and a versioned constraint file — the wedge
-against a black-box optimiser. The approve→deploy gate re-checks the corridor
+Every number is traceable to open code and a versioned constraint file — so every
+recommendation can be explained. The approve→deploy gate re-checks the corridor
 server-side, so it holds regardless of who (or what) calls it.
 """
 import json

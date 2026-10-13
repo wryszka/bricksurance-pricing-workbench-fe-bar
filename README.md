@@ -1,14 +1,79 @@
-# Bricksurance Pricing Workbench — governed motor & commercial pricing on Databricks
+# Bricksurance Pricing Workbench — governed motor pricing on Databricks
 
-> **▶ Live app** (open to all Databricks colleagues, Databricks SSO):
-> - Via **[go/bricksurance](https://go/bricksurance)**, the Bricksurance estate front door: **Pricing workbench** tile → **gen2 Beta** button. This repo is the gen2 build.
-> - Direct link: **https://pricing-workbench-gen2-7474655676955816.aws.databricksapps.com**. The guided Price Optimisation demo is at [`/optimisation-demo`](https://pricing-workbench-gen2-7474655676955816.aws.databricksapps.com/optimisation-demo).
+## ▶ Open the deployed app: **[https://pricing-workbench-gen2-7474655676955816.aws.databricksapps.com](https://pricing-workbench-gen2-7474655676955816.aws.databricksapps.com)**
+
+*Pricing Workbench gen2. Open to all Databricks colleagues; sign in with Databricks SSO. Also reachable via [go/bricksurance](https://go/bricksurance) → Pricing workbench tile → **gen2 Beta**.*
+
+## The business outcome
+
+**Customer:** a UK personal-lines **motor insurer**. **Executive sponsor:** Head of Pricing / Chief Underwriting Officer. **Domain owner:** the pricing actuaries and analysts.
+
+**The problem.** UK motor is priced on aggregators, where the cheapest accurate price wins. The market is set by the most analytical pricers (Admiral and Hastings are the usual benchmarks), whose advantage comes from better models, fresher data and faster price changes. An insurer that reprices more slowly, or on fewer rating factors, gets **adversely selected**: it wins the risks that competitors have priced correctly as worse. For most insurers the pricing chain is still split across separate tools: data preparation, modelling, optimisation, the rating engine and monitoring, joined by exports and spreadsheets. On top of that, the FCA's pricing-practices rules (GIPP) and Consumer Duty fair-value rules require evidence behind every price change.
+
+**What one governed pricing platform gives the insurer.** Five reasons to move pricing onto Databricks, each with what this build demonstrates and how to size it:
+
+| # | Value | What this build demonstrates (live) | How to size it for your book (estimate, your inputs) |
+|---|---|---|---|
+| **1** | **Better calculations**: sharper risk models and demand-based price optimisation | Real external data lifts model **Gini 0.11 → 0.25**. The demand model **recovers the true price sensitivity** built into the test data (slope −6.0 true vs −5.6 recovered). The optimiser finds **+9.2% expected profit** inside a ±15% corridor of the break-even price. *All on synthetic data: this proves the mechanism, not your uplift* | **Each 1 point of loss ratio on a £500m book is £5m a year.** Industry experience of better segmentation plus demand optimisation is typically low single-digit points. A pilot on your data measures your real number |
+| **2** | **Much fresher data**: prices that react in days, not quarters | New data lands, passes **14 quality rules**, and reaches the gold pricing table, the models and the live scorer **in one governed pipeline**. The whole estate rebuilds serverless in **~30–40 minutes**, and an approved rate change deploys from the app | **Every month a price lags the market is a month of adverse selection on aggregators.** Size it as: share of quotes mispriced × average mispricing × months of lag |
+| **3** | **More features served live at quote time** | **43 features per motor policy (104 for commercial)** served from **Lakebase** by key. Four models (frequency, severity, demand, fraud) price a quote in **~240 ms** from just its `policy_id`, including real postcode, deprivation and telematics signals | Rating factors you can *use* at the point of quote, not just in offline analysis. Each new predictive factor that a factor-table rating engine can't carry is lift you currently leave out |
+| **4** | **Full governance**, evidence the FCA can read | Unity Catalog lineage from source to model to price; an immutable audit log; a **named human approval** with the corridor re-checked server-side; a decision record per price change (models, versions, data snapshot, approver, fair-value result); a GIPP-enforced renewal solver. An AI recommender **blocks** a plan whose fair-value screen fails | Hours of audit and remediation work per review cycle replaced by one query. Lower regulatory risk on GIPP and Consumer Duty fair value |
+| **5** | **Lower licensing cost** from consolidating classic point tools | Data prep, modelling, optimisation, live serving, BI and the app run on **one platform, pay-per-use and serverless**. It can run alongside an existing rating engine during migration | Add up today's separate licences (data prep, modelling, optimisation, rating engine, BI), minus Databricks consumption. Typically a **seven-figure annual line** for a mid-size insurer, phased out tool by tool |
+
+**For the executive sponsor:** a measurable profit lever, faster reaction to the market, lower tool cost, and a fair-value audit trail the board and the FCA can read. **For the domain owner (pricing actuaries):** one workbench for data, models, optimisation and approval, with more features in production and every number traceable to its source.
+
+*Figures in the middle column come from the live build on a synthetic 50,000-policy motor book (plus real public UK postcode data). Figures in the right column are sizing scenarios to be replaced with the insurer's own inputs; they are not results.*
+
+> **Evidence the build ran (text):** [**evidence/EXECUTION_OUTPUT.md**](evidence/EXECUTION_OUTPUT.md) has verbatim query results, metric-view `MEASURE()` output, model metrics, live model scores, and live answers from the Agent Framework agent, Genie, the Knowledge Assistant and the Supervisor Agent. [evidence/RUN_EVIDENCE.md](evidence/RUN_EVIDENCE.md) has job runs, endpoints, Lakebase and Genie state.
 >
-> **🎬 Demo recording:** [Bricksurance — Pricing Workbench (YouTube)](https://www.youtube.com/watch?v=p9UTKOY7AKc)
+> **Live app** (open to all Databricks colleagues, SSO): [go/bricksurance](https://go/bricksurance) → **Pricing workbench** tile → **gen2 Beta**, or directly at **https://pricing-workbench-gen2-7474655676955816.aws.databricksapps.com** (guided demo: [`/optimisation-demo`](https://pricing-workbench-gen2-7474655676955816.aws.databricksapps.com/optimisation-demo)).
 >
-> **📊 Deck:** [Actuarial Pricing on Databricks](https://docs.google.com/presentation/d/1dIvzuaXDl_lCNuW153e0pzewNeVCJIF9ynzoWz842k8) (Databricks-internal)
->
-> **✅ Proof every layer ran:** [evidence/RUN_EVIDENCE.md](evidence/RUN_EVIDENCE.md) · **🤖 How it was built with AI:** [BUILD.md](BUILD.md)
+> **Demo recording:** [YouTube](https://www.youtube.com/watch?v=p9UTKOY7AKc) · **Deck:** [DECK.md](DECK.md) · **Built with AI:** [BUILD.md](BUILD.md)
+
+## One connected journey: follow one policy
+
+Every stage reads the previous stage's governed output in the same Unity Catalog schema. Here is `POL-MOTOR-00000001` (real values from [EXECUTION_OUTPUT.md](evidence/EXECUTION_OUTPUT.md)):
+
+1. **Lakeflow, ingest.** Raw policy, claims, telematics and quote data, plus external datasets (market benchmark, geo-hazard, credit bureau, 1.5M real postcodes), land in bronze. A Lakeflow Declarative Pipeline applies 14 data-quality expectations: 500,000 → 465,730 credit-bureau rows survive to silver.
+2. **Unity Catalog, govern and define.** Gold `unified_motor_table_live` joins policies, claims history and telematics. UC lineage records each source. Tables carry ownership and PII tags, and every event goes to an immutable `audit_log`. A **semantic layer of five UC metric views** defines each KPI once (risk cost, frequency, severity, conversion, price vs technical, expected profit hold vs optimised). Forbidden pricing signals (gender, marital status, occupation) are deliberately not exposed as dimensions.
+3. **Lakebase, serve.** The gold table is synced to Lakebase (`unified_motor_table_live_online`), the online feature store.
+4. **ML, make it intelligent.** `pwg2_motor_scorer` receives only `{"policy_id": "POL-MOTOR-00000001"}`, looks up features from Lakebase, and returns frequency 0.111/yr, severity £7,161, demand 0.55, fraud 0.46, a technical premium of **£1,075.85** and a final premium of **£1,430.88**. The price optimiser then sets that policy's segment factor inside the corridor.
+5. **GenAI, explain and govern.** An **Agent Bricks Supervisor Agent** is the front door. It routes each question to Genie over the metric views, to an **Agent Bricks Knowledge Assistant** over every model's governance pack and the pricing policy (Vector Search managed by Agent Bricks, answers cite the document), or to the `explain_price` UC function. It is read-only by design and cannot deploy a price. Underneath, specialised Agent Framework agents (Claude) do the deep work. For example, the `recommender` writes the decision pack and, when the fair-value screen fails, recommends **REVISE BEFORE DEPLOY**.
+6. **Genie, ask in plain English.** "Expected profit of the optimised plan versus holding prices, by driver age band?" → Genie answers with `MEASURE()` over the `mv_price_optimisation` metric view, so it uses the same governed definition as the app and the agents. The verbatim SQL and result are in the evidence.
+7. **App, act.** The pricing team reviews, approves and deploys in the Databricks App. The ±15% corridor is re-checked server-side, and the approval is written to `optimisation_decision_records`.
+
+## The six layers, where to look
+
+Where each stage lives in the code. Every layer reads and writes the **same** Unity Catalog schema (`pricing_workbench_gen2`). There is no side data and no mocks.
+
+| Layer | What it does here | Where to look |
+|---|---|---|
+| **1. Lakeflow + Unity Catalog** | Volume → bronze ingestion; Lakeflow Declarative Pipeline (silver) with data-quality expectations; gold Unified Pricing Table; 67 Lakeflow Jobs, with one `full_build` job that populates everything; UC tags, column descriptions, lineage, audit log, regulatory export; **semantic layer of five UC metric views** (`mv_motor_portfolio`, `mv_commercial_portfolio`, `mv_quote_conversion`, `mv_price_optimisation`, `mv_price_frontier`) | `resources/ingestion_pipeline.yml`, `src/01_ingestion/`, `src/02_silver/*.sql`, `src/03_gold/`, `src/03_gold/build_metric_views.py`, `resources/metric_views.yml`, `resources/full_build.yml`, `src/00_setup/apply_tags.py`, `src/08_governance/` |
+| **2. Lakebase** | Online feature store (`motor-pricing-online-store`, `pricing-upt-online-store`) for low-latency feature lookups at quote time | `src/07_serving/setup_online_store.py`, `src/07_serving/test_online_lookup.py`, `src/04_models/production/motor_pricing_scorer.py` |
+| **3. ML (deep component)** | Frequency/severity GLMs, demand, fraud and retention GBMs, monotone LightGBM elasticity models; a 50-spec GLM model factory; MLflow tracking, UC registry with `@champion` aliases, governance PDF per model; real-time Model Serving scorers; a constrained price-optimisation solver | `src/04_models/production/`, `resources/factory_train.yml`, `src/07_serving/`, `resources/optimisation.yml` |
+| **4. GenAI agents** | **Agent Bricks**: a **Supervisor Agent** (*Bricksurance Pricing Supervisor*, read-only, with tools Genie ×2, the Knowledge Assistant and the `explain_price` UC function) and a **Knowledge Assistant** (*Model Governance Assistant*) over the governance-pack PDFs and the pricing policy documents, with Vector Search managed by Agent Bricks. Under it, **Mosaic AI Agent Framework** agents on Claude (Foundation Model API): the pricing chat agent with 12 personas (recommender, rate-change, drift sentinel, constraint author, committee scribe, price explainer…) and a governance agent. **Unity AI Gateway** inference tables log every agent request and response to UC. The optimisation loop is also exposed as an **MCP** tool surface, with the deploy gate enforced inside the tool | `src/04_models/production/agent_bricks_setup.py`, `resources/agent_bricks.yml`, `src/04_models/production/pricing_chat_agent.py`, `src/04_models/production/governance_agent.py`, `src/app/server/routes/mcp.py`, `docs/MCP_INTERFACE_SPEC.md` |
+| **5. Genie** | Two curated Genie spaces: *Modelling Mart — Pricing Q&A* over the **metric views** plus the gold pricing table, and *Commercial Quote Review*. Both are embedded in the app and are tools of the Supervisor Agent | `src/00_setup/create_ai_assets.py`, `resources/ai_assets/`, `src/app/server/routes/genie.py` |
+| **6. Databricks App** | FastAPI + React workbench: data ingestion with HITL approval, feature store, model factory, deployment, quote review, monitoring, governance, and the seven-tab Price Optimisation loop (approve → deploy) | `src/app/`, `resources/app.yml` |
+
+**Deployed vs illustrative:** everything above is deployed and has run (see [evidence](evidence/RUN_EVIDENCE.md)). Policy, quote and claim data are **synthetic**; the postcode enrichment uses **real public UK data** (ONSPD, IMD 2019, ONS RUC). No customer data is used anywhere.
+
+---
+
+## Decisions and trade-offs
+
+| Decision | Why | Trade-off accepted |
+|---|---|---|
+| **Optimise against the technical (break-even) price, inside a ±15% corridor** | Keeps every optimised price tied to risk cost. Regulators and actuaries can defend it | Less theoretical upside than an unconstrained optimiser |
+| **Human approval is mandatory and re-checked server-side** | Agents and the solver can propose, explain and draft, but only a named human can deploy a price. The same gate guards the app and the MCP tool surface | One extra step before any price goes live |
+| **Monotone, explainable models (GLMs for risk, monotone LightGBM for elasticity)** | Price must never make a customer *more* likely to buy, and rating factors must be explainable to the FCA | A small loss of raw accuracy versus unconstrained ML |
+| **Lakebase online store, not a warehouse query, for live pricing** | Quote-time pricing needs millisecond key lookups, and the scorer resolves features from just the `policy_id` | A second store to keep in sync (managed by synced tables) |
+| **Motor only for optimisation; commercial lines ruled out** | Motor proves the whole loop. A second optimiser would duplicate it and confuse the story | Commercial pricing stops at the model and rating stage |
+| **Synthetic book + real public enrichment** | Anyone can deploy it, with no customer data. Real postcodes keep the feature lineage genuine | Absolute £ figures are illustrative; ratios and mechanisms are the point |
+| **Agent Bricks Supervisor + Knowledge Assistant on top, Agent Framework agents underneath** | The managed Supervisor gives one governed front door and the Knowledge Assistant gives cited answers over governance documents with no RAG code to maintain. Pricing personas that need custom tools stay as Agent Framework agents | Two agent layers to explain. The Supervisor is read-only, so deploying a price stays a human action in the app |
+| **Metric views as the semantic layer** | Loss ratio, risk cost, conversion and expected profit are defined once in Unity Catalog, so Genie, the dashboard and the agents cannot disagree, and ratios re-aggregate correctly | Measures must be added to the YAML before anyone can query a new KPI |
+| **Expose the loop as MCP tools as well as the UI** | External agents can drive pricing under exactly the same gates as a human in the app | More surface to secure: authorisation is enforced inside each sensitive tool, not only at the transport |
+
+Full dated log with verification notes: [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Part of Bricksurance — an open-source insurance operating system on Databricks
 
@@ -27,40 +92,6 @@ This workbench is one module of **Bricksurance**: a fictional European insurer (
 | Solvency II | [solvency_workbench](https://github.com/wryszka/solvency_workbench) |
 | Life | [lifecast](https://github.com/wryszka/lifecast) |
 | Rate indications | [rate-indications-workbench](https://github.com/wryszka/rate-indications-workbench) |
-
-## The customer problem
-
-**Buyer:** Head of Pricing / Chief Underwriting Officer at a UK personal-lines and commercial insurer. **Domain owner:** the pricing actuaries and pricing analysts.
-
-- **Pricing is slow and fragmented.** Data prep, model building, rating-engine hand-off and monitoring run in separate tools, joined by spreadsheets and file transfers. Taking a new rating factor from idea to live price takes months.
-- **Regulators want evidence, not assertions.** The FCA's pricing-practices rules (GIPP — no price-walking at renewal) and Consumer Duty fair-value requirements mean every price change needs a traceable answer: which data, which model, who approved it, and was it fair.
-- **Optimisation is a black box.** Demand and elasticity models change the price customers see, but few teams can show the corridor, the constraints and the human sign-off behind an optimised price.
-
-## What this build does about it — the outcome
-
-One governed loop on Databricks: **external data → features → models → optimised price → human approval → deployment → monitoring**, all in one Unity Catalog estate with lineage and an immutable audit log.
-
-| Outcome (synthetic book, verified on the live build) | Result |
-|---|---|
-| Price optimisation uplift, motor new business | **+£1.00m (+10.7%)**: £9.38m hold-price → £10.39m optimised, all inside a ±15% corridor around the technical (break-even) price |
-| Closed loop — did the deployed prices do what the model said? | Predicted profit £8.79m vs realised £8.77m (**−0.2%**) one month on |
-| Value of real external data | Real UK postcode enrichment (1.5M postcodes) lifts **Gini 0.11 → 0.25**, deviance explained 1.0% → 5.3% |
-| Approval control | No price reaches production without a named human approval; the corridor is re-checked **server-side** and the decision is written to an immutable record |
-
-## Six Databricks layers, one connected journey
-
-One governed Unity Catalog estate runs through every layer: external and internal pricing data are ingested and governed, served online, modelled, explained by agents, questioned in Genie, and priced and approved in the app.
-
-| Layer | What it does here | Where to look |
-|---|---|---|
-| **1. Lakeflow + Unity Catalog** | Volume → bronze ingestion; Lakeflow Declarative Pipeline (silver) with data-quality expectations; gold Unified Pricing Table; 65 Lakeflow Jobs, with one `full_build` job that populates everything; UC tags, column descriptions, lineage, audit log, regulatory export | `resources/ingestion_pipeline.yml`, `src/01_ingestion/`, `src/02_silver/*.sql`, `src/03_gold/`, `resources/full_build.yml`, `src/00_setup/apply_tags.py`, `src/08_governance/` |
-| **2. Lakebase** | Online feature store (`motor-pricing-online-store`, `pricing-upt-online-store`) for low-latency feature lookups at quote time | `src/07_serving/setup_online_store.py`, `src/07_serving/test_online_lookup.py`, `src/04_models/production/motor_pricing_scorer.py` |
-| **3. ML (deep component)** | Frequency/severity GLMs, demand, fraud and retention GBMs, monotone LightGBM elasticity models; a 50-spec GLM model factory; MLflow tracking, UC registry with `@champion` aliases, governance PDF per model; real-time Model Serving scorers; a constrained price-optimisation solver | `src/04_models/production/`, `resources/factory_train.yml`, `src/07_serving/`, `resources/optimisation.yml` |
-| **4. GenAI agents** | Mosaic AI Agent Framework agents on Claude (Foundation Model API): pricing chat agent with personas (rate-change, drift sentinel, constraint author, committee scribe, price explainer…) and a governance agent. Tools read governed UC data; the whole optimisation loop is also exposed as an **MCP** tool surface, with the deploy gate enforced inside the tool | `src/04_models/production/pricing_chat_agent.py`, `src/04_models/production/governance_agent.py`, `src/app/server/routes/mcp.py`, `docs/MCP_INTERFACE_SPEC.md` |
-| **5. Genie** | Two curated Genie spaces over the governed gold tables: *Modelling Mart — Pricing Q&A* and *Commercial Quote Review*, embedded in the app | `src/00_setup/create_ai_assets.py`, `src/app/server/routes/genie.py` |
-| **6. Databricks App** | FastAPI + React workbench: data ingestion with HITL approval, feature store, model factory, deployment, quote review, monitoring, governance, and the seven-tab Price Optimisation loop (approve → deploy) | `src/app/`, `resources/app.yml` |
-
-**Deployed vs illustrative:** everything above is deployed and has run (see [evidence](evidence/RUN_EVIDENCE.md)). Policy, quote and claim data are **synthetic**; the postcode enrichment uses **real public UK data** (ONSPD, IMD 2019, ONS RUC). No customer data is used anywhere.
 
 ---
 

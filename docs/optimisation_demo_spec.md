@@ -15,8 +15,8 @@
 **Target:** Pricing Workbench **v2** (`fevm-lr-pricing-v2-aws-us`, catalog
 `lr_pricing_v2_aws_us_catalog`, schema `pricing_workbench`, warehouse
 `f738fde9a1197aeb`). Dev is explicitly out of scope.
-**Trigger:** a GI client wants to move off **Earnix**; price optimisation is
-their main concern right now. This spec scopes what it would take to show a
+**Trigger:** price optimisation is a top concern for UK general insurers right
+now. This spec scopes what it would take to show a
 credible optimisation *example* on the workbench — not to deliver a production
 optimiser.
 
@@ -55,17 +55,17 @@ above. §7 "Full" and §6 UK-specific depth are future, not now.
 Databricks does not sell a pricing optimiser and does not deliver models. What
 this demo shows is the **platform pattern** for price optimisation:
 
-- the client's **own** cost and demand models, governed side by side in Unity
+- the insurer's **own** cost and demand models, governed side by side in Unity
   Catalog;
-- a **reference optimisation routine** (a worked example the client's actuaries
+- a **reference optimisation routine** (a worked example the insurer's actuaries
   own and can rewrite) that turns those models into a price recommendation;
 - every recommendation **explainable, versioned and audited**, with regulatory
   constraints enforced as first-class inputs.
 
-This is the wedge against Earnix: **open, transparent, your models, no black
-box, no per-seat lock-in** — the optimisation logic is readable code and its
-config is governed data, not a vendor's closed engine. We win on governance and
-transparency, not on "our optimiser is better."
+The value is **open, transparent, your models** — the optimisation logic is
+readable code and its config is governed data, so it sits comfortably alongside
+whatever optimisation and rating tools an insurer already uses. The emphasis is
+governance and transparency, not "our optimiser is better."
 
 > Keep the standard demo disclaimer: Bricksurance SE is fictional; all data
 > synthetic; the optimisation method is illustrative, not a certified pricing
@@ -97,10 +97,10 @@ choose the price `p*` that maximises a **business objective** subject to
 - competitive guardrails (stay within *k* of market/competitor);
 - **regulatory** — see §6. For UK GI this is not optional.
 
-Two demand regimes, both relevant to an Earnix displacement:
+Two demand regimes, both relevant to a pricing team:
 - **New business** — conversion elasticity (the `demand_gbm` model).
 - **Renewal** — retention/churn elasticity (the `retention_churn` model, not yet
-  built). Renewal price optimisation is Earnix's core use case.
+  built). Renewal price optimisation is the core regulated use case in UK GI.
 
 The showable artefacts are the **demand curve + cost line per segment**, the
 **optimal price**, the **efficient frontier** (volume vs profit), and the
@@ -238,7 +238,7 @@ conversion/margin after a price move would complete the loop (can be phase 2).
 
 ## 6. Regulatory framing (must be explicit for a UK GI client)
 
-If the client is **UK GI**, price optimisation is *regulated* and this must be
+If the insurer is **UK GI**, price optimisation is *regulated* and this must be
 built into the demo, not bolted on:
 
 - **FCA GI pricing rules (PS21/5, in force Jan 2022):** the renewal price for an
@@ -304,7 +304,7 @@ ground-up build.
 
 1. **Primary objective to lead with** — new-business conversion, or renewal
    retention? (Steers whether we build `retention_churn` first.)
-2. **Jurisdiction** — is the client UK GI (→ make FCA no-price-walking + fair
+2. **Jurisdiction** — is the insurer UK GI (→ make FCA no-price-walking + fair
    value a headline), or another market (→ generalise the constraint framing)?
 3. **Core vs optional tier** for the optimisation assets.
 4. **Fix the elasticity DGP globally?** It currently makes *every* demand-curve
@@ -323,7 +323,7 @@ ground-up build.
 - **Regulatory correctness:** the FCA framing must be accurate; validate the
   no-price-walking constraint logic with an SME before it goes client-facing.
 - **Scope creep into "we deliver models":** hold the line — this is a reference
-  pattern the client owns, demonstrated on synthetic data.
+  pattern the insurer owns, demonstrated on synthetic data.
 - **Depends on** the v2 base being stable post-WS2 (naming/tags) and, for
   renewal, on a renewal/retention dataset that does not yet exist.
 
@@ -345,7 +345,7 @@ Status: built (Phases 1–3). Written against `wryszka/pricing-workbench-gen2` @
 
 ## 0. Pre-work (before any module code)
 
-- [x] **Remove the client name from `databricks.yml`** → "frozen v2 client deployment" (done 2026-08-19; also scrubbed app.pricingv2.yaml, docs/v2_plan.md; removed the AXA hand-off machinery scripts/make_handoff.sh + handoff/).
+- [x] **Neutral naming in `databricks.yml`** → "frozen v2 deployment" (done 2026-08-19; also app.pricingv2.yaml, docs/v2_plan.md; removed the hand-off scripts scripts/make_handoff.sh + handoff/).
 - [x] Remove/lock the internal Google Doc runbook link in README (public repo) — done. (App sidebar DemoDocCard still links it; make env-driven if the app repo is shared publicly.)
 - [x] **Demand GBM resolved (2026-08-19):** it already IS the conversion model — a LightGBM binary classifier on `quotes.converted` (bound vs not), and the quote stream already carries the elasticity DGP (`vs_market_rate` → logit `bind_prob` → `converted`, plus `market_premium`). So there is NO two-demand-concept problem: the optimizer **promotes demand_gbm as its conversion model** (no rename). Block 02 only needs to (a) make **price an explicit lever with `monotone_constraints`** — today it uses `vs_market_rate` as a plain feature with no monotonicity — and (b) add a **retention model** once block 01 generates renewal events.
 

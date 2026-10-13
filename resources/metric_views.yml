@@ -1,0 +1,25 @@
+# Semantic layer: Unity Catalog metric views over the gold + optimisation tables.
+# One governed definition of premium, risk cost, loss ratio, conversion and expected
+# profit, consumed by Genie, the AI/BI dashboard, the agents and the app.
+resources:
+  jobs:
+    build_metric_views:
+      name: "Build — semantic layer: UC metric views (gen2)"
+      parameters:
+        - name: catalog_name
+          default: ${var.catalog_name}
+        - name: schema_name
+          default: ${var.schema_name}
+      tasks:
+        - task_key: metric_views
+          notebook_task:
+            notebook_path: ../src/03_gold/build_metric_views.py
+            base_parameters:
+              catalog_name: ${var.catalog_name}
+              schema_name:  ${var.schema_name}
+          environment_key: env
+      environments:
+        - environment_key: env
+          spec:
+            client: "5"
+            dependencies: []

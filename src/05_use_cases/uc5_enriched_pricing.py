@@ -17,8 +17,8 @@
 # MAGIC | **Retention Discount** | GBM Retention | Applies discount for at-risk renewals to retain them |
 # MAGIC
 # MAGIC **Why this matters:** On Databricks, all 6 models use the same feature store,
-# MAGIC same governance, same serving infrastructure. On legacy platforms, each model
-# MAGIC is a separate system with its own data pipeline and integration overhead.
+# MAGIC same governance, same serving infrastructure. When each model lives in a separate
+# MAGIC system, each one needs its own data pipeline and integration.
 
 # COMMAND ----------
 
@@ -235,10 +235,9 @@ display(
 # MAGIC 2. **Composable pricing:** Each model output is a transparent factor in the
 # MAGIC    final price. An actuary can inspect and override any component.
 # MAGIC
-# MAGIC 3. **No integration overhead:** On legacy platforms (Radar, Earnix, Emblem),
-# MAGIC    adding a new model means a new data pipeline, new integration, new
-# MAGIC    deployment process. On Databricks, it's one more notebook using the
-# MAGIC    same feature store.
+# MAGIC 3. **Low integration overhead:** adding a new model is one more notebook using
+# MAGIC    the same feature store and governance. The scored outputs can still feed an
+# MAGIC    existing rating engine.
 # MAGIC
 # MAGIC 4. **Audit trail:** Every model, every score, every decision is tracked.
 # MAGIC    A regulator can reconstruct the exact pricing for any historical quote.

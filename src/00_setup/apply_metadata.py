@@ -286,8 +286,8 @@ TABLES = {
     "impact_severity_loss_ratio_by_decile":
         "Loss-ratio stability on the full burning-cost quotes, by premium decile.",
     "impact_model_factory_results":
-        "All 50 GLM-spec factory outcomes ranked by AIC, BIC, Gini. Reproduces what an "
-        "actuary would do manually in WTW Radar, at scale.",
+        "All 50 GLM-spec factory outcomes ranked by AIC, BIC, Gini. Systematises the "
+        "spec search an actuary would otherwise do by hand, at scale.",
     "impact_model_factory_feature_impact":
         "Average AIC improvement per enrichment feature across the 50-spec factory — "
         "the 'which feature is most valuable' view.",

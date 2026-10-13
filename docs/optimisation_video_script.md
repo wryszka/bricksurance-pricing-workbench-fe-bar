@@ -28,7 +28,7 @@ twist (Consumer Duty / fair value), not just a commercial one.
 Two standing rules this script obeys:
 - **Never label anything "WOW" on screen or out loud.** The impressive moments land through the
   *visible artifact*.
-- **Never verbalise a shot at Earnix/Radar.** Practitioner hooks are *seen, not said*. The one
+- **Never criticise other pricing tools.** Practitioner hooks are *seen, not said*. The one
   spoken competitive line is the polite leave-behind at the very end — and it is now the **only**
   competitive line anywhere (the on-app "appliance" copy has been removed).
 

@@ -12,13 +12,13 @@
 ---
 
 ## 1 · Practitioner (pricing actuary)
-*Real and right in my world? Value vs Radar/Earnix? Deal-breakers?*
+*Real and right in my world? Value alongside existing pricing tools? Deal-breakers?*
 
 | # | Finding | Severity | Status |
 |---|---|---|---|
 | 1 | Monotonicity enforced end-to-end (LightGBM `monotone_constraints`); endogeneity panel shows why raw price would hide it — defensible under drill-down. | — (strength) | — |
 | 2 | Price enters as ratio to technical, never raw; `vs_technical` / `vs_market`. Correct answer to the endogeneity kill-shot. | — (strength) | — |
-| 3 | Versioned constraint YAML + server-side HITL gate = the wedge against a black-box optimiser. | — (strength) | — |
+| 3 | Versioned constraint YAML + server-side HITL gate = a transparent, auditable optimiser. | — (strength) | — |
 | 4 | Motor-only in Phase 1 (commercial deferred) — fair, but should be one-line labelled in the talk-track. | minor | roadmapped |
 | 5 | GATE-1 lineage edge open — champion *scoring* works; add a one-line "lineage note" on the How-it-works tab. | minor | roadmapped |
 
@@ -30,7 +30,7 @@
 | # | Finding | Severity | Status |
 |---|---|---|---|
 | 1 | Uplift numbers are model-derived (elasticity × simulated book), not hardcoded; red-team panels validate the DGP. | — (strength) | — |
-| 2 | Add an "assumptions & sensitivity" line (base elasticity, "if elasticity halves → £Z") + the explicit Earnix contrast. | major | roadmapped |
+| 2 | Add an "assumptions & sensitivity" line (base elasticity, "if elasticity halves → £Z"). | major | roadmapped |
 | 3 | Regulatory framing (GIPP / Consumer Duty / fair-value evidence) is infra-ready but not *presented* — add a How-it-works bullet; full pack is Phase 2. | major | roadmapped |
 | 4 | Open on risk-of-inaction (vendor lock-in, per-seat cost, no audit) rather than the capability — re-messaging, not code. | major | roadmapped |
 | 5 | Solver constraints versioned + audited; every solve writes an audit row — the headline CFO story. | — (strength) | — |

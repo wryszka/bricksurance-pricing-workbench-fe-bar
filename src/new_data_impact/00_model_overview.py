@@ -134,8 +134,7 @@
 # MAGIC %md
 # MAGIC ## Model Factory — 50 GLM Specifications
 # MAGIC
-# MAGIC Instead of manually configuring model variants one at a time (as in WTW Radar, Emblem,
-# MAGIC or Earnix), notebook 01 **programmatically generates and trains 50 GLM specifications**:
+# MAGIC Instead of configuring model variants one at a time, notebook 01 **programmatically generates and trains 50 GLM specifications**:
 # MAGIC
 # MAGIC | Search dimension | Variants |
 # MAGIC |---|---|

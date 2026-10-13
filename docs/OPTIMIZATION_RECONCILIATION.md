@@ -68,7 +68,7 @@ needs rework) · **NEW** (net-new) · **CONFLICT** (diverges from current) · **
 
 | Spec § | Status | Reality / action |
 |---|---|---|
-| **0.1** remove AXA from databricks.yml | MOOT | No "AXA" in gen2 `databricks.yml` (already neutral). |
+| **0.1** neutral naming in databricks.yml | MOOT | gen2 `databricks.yml` already neutral. |
 | **0.2** internal Google-Doc link | PARTIAL | Not in README. Lives in **uncommitted** `RatingEngineIntegration.tsx` (`ACTUARIAL_SW_INTEGRATIONS_DOC`). Lock down / drop before it's committed. |
 | **0.3** resolve the Demand GBM | CONFLICT | See cross-cutting #3. Three demand concepts live; must consolidate on technical-price formulation. |
 | **1** purpose/positioning (motor) | CONFLICT | Live optimiser is commercial. Motor is the target habitat; commercial becomes surrounding demo. |

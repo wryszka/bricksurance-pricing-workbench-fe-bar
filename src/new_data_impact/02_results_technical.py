@@ -740,7 +740,7 @@ print(f"model that was registered in Unity Catalog as "
 # MAGIC | Approach | Systematic enrichment feature subsets + interaction combinations |
 # MAGIC | Elbow point | Adding all enrichment features gives the largest single AIC improvement |
 # MAGIC | Best interaction | Varies by impact_portfolio — see feature impact chart |
-# MAGIC | vs Radar / Emblem | 50 models in under a minute vs 5–10 models over hours of analyst time |
+# MAGIC | Throughput | 50 model specifications trained and ranked in one serverless run |
 # MAGIC
 # MAGIC **Business impact:** The enriched models enable risk-adequate pricing for exposures the
 # MAGIC standard models cannot observe — neighbourhood crime, area deprivation, living-environment

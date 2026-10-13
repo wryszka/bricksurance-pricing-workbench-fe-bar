@@ -4,7 +4,7 @@
 **Why:** the current demo is a months-long vibe-coded build that only deploys
 cleanly as `laurence.ryszka` on the dev workspace. v2 is a clean, tiered,
 multi-user-safe, clearly-named version that deploys to any workspace — the
-first target being a fresh FEVM, then the the client sandbox.
+first target being a fresh FEVM, then other workspaces.
 
 **Ground rules**
 - Do **not** touch the dev workspace or its assets. v2 deploys elsewhere.
@@ -129,20 +129,20 @@ a proper landing page; move the AI live/cached control out of shared chrome
 2. WS1 (deploy-clean) → WS2 (tiers/naming/tags) → deploy **Core-only** to the
    fresh FEVM → smoke test.
 3. WS3 + WS4 hardening → WS5 interface, iterating on the live workspace.
-4. Replicate to the the client sandbox once Core is proven clean.
+4. Replicate to other workspaces once Core is proven clean.
 
 **Workspace:** a **fresh FEVM** (AWS Stable Serverless) — a clean workspace is
 the honest test of "deploys anywhere" and the best backdrop for the stand-out
 naming. Requested 2026-08-11.
 
-**Docs for Cedric/the client:** compile the light component-overview doc *later*, once
+**Component-overview doc:** compile the light component-overview doc *later*, once
 Laurence is happy with how v2 looks.
 
 ---
 
 ## WS7 — Price Optimisation demo (accepted 2026-08-13)
 
-The Earnix-displacement ask. Full spec: `docs/optimisation_demo_spec.md` (see its
+The price-optimisation demo. Full spec: `docs/optimisation_demo_spec.md` (see its
 §0 for the decided scope). **This is a demo OF optimisation, not an optimiser** —
 smallest credible example, Core tier, new-business profit first.
 

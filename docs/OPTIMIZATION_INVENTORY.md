@@ -51,7 +51,7 @@ to reconcile against `OPTIMIZATION_MODULE_SPEC.md`. Produced 2026-08-24.
 ```
 4699787  gen2 optimisation: driven Walkthrough tab + real-asset deep-links + monitoring
 57d5e2e  gen2 optimisation: add a "How it works" tab (data / model / tech)
-a406749  gen2 optimization: drop the new 09_optimization module, restore the AXA worked-example optimizer
+a406749  gen2 optimization: drop the new 09_optimization module, restore the worked-example optimizer
 dcfafcb  optimizer: constraints endpoint reads the YAML via Workspace API (app container lacks the sibling file)
 629ffd0  optimizer: fix /api/optimization/overview scenarios query (rounded a string)
 fcc7724  optimizer: app page (PriceOptimisation) + /api/optimization; scale to 500k + enable optimization

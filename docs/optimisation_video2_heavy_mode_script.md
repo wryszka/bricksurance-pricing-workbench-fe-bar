@@ -15,7 +15,7 @@ practitioners get the silent hook that this is flex a closed, single-formula too
 believes the light, governed loop is real — which Part 1 established. So this video **assumes Part 1**,
 recaps in two sentences, then earns the second gear.
 
-Same two standing rules: **no "WOW" label, ever**; **no verbalised shot at Earnix/Radar** — the one
+Same two standing rules: **no "WOW" label, ever**; **never criticise other pricing tools** — the one
 competitive line is the polite leave-behind (spoken, at the end).
 
 Each beat: **GO** · **SAY** · **SEE** (silent hook — do not verbalise) · **IF ASKED / FALLBACK**.

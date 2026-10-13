@@ -1,0 +1,27 @@
+# Agent Bricks layer: governance Knowledge Assistant (managed Vector Search over the
+# governance packs + policy docs) and the Pricing Supervisor Agent (routes to Genie
+# over the metric views, the KA and the explain_price UC function). Read-only by design.
+resources:
+  jobs:
+    agent_bricks_setup:
+      name: "Build — Agent Bricks: governance KA + pricing supervisor (gen2)"
+      parameters:
+        - name: catalog_name
+          default: ${var.catalog_name}
+        - name: schema_name
+          default: ${var.schema_name}
+      tasks:
+        - task_key: agent_bricks
+          notebook_task:
+            notebook_path: ../src/04_models/production/agent_bricks_setup.py
+            base_parameters:
+              catalog_name: ${var.catalog_name}
+              schema_name:  ${var.schema_name}
+              docs_path:    ${workspace.file_path}
+          environment_key: env
+      environments:
+        - environment_key: env
+          spec:
+            client: "5"
+            dependencies:
+              - databricks-sdk>=0.152.0

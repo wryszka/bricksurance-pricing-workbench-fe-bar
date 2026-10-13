@@ -117,8 +117,20 @@ End-to-end walkthrough of the deployed app: [Bricksurance — Pricing Workbench 
 
 ## Verified outcomes
 
-- **Price optimisation (motor):** hold-price book £9.38m → optimised £10.39m, **+£1.00m (+10.7%)**, every segment inside the ±15% corridor around the technical (break-even) price. Source: `docs/DECISIONS.md` (re-measured 2026-08-26).
+- **Price optimisation (motor):** expected profit at today's prices £9.42m → optimised **£10.29m, +£868k (+9.2%)**, all nine segments inside the ±15% corridor (solver re-run 2026-10-13, objective = expected_profit; the same uplift as the 2026-09-05 profit-objective runs). Verbatim output: [EXECUTION_OUTPUT.md](EXECUTION_OUTPUT.md).
 - **Closed loop ("did it work?"):** after rolling the book forward one synthetic month under the deployed prices, predicted profit £8.79m vs realised £8.77m (**−0.2%**). Source: live query of `optimisation_advance_result`, 2026-10-12.
 - **New data impact study:** real UK postcode enrichment lifts Gini 0.11 → 0.25 and deviance explained 1.0% → 5.3%. Source: `src/new_data_impact/`.
 
 _Regenerate:_ `databricks jobs list-runs`, `databricks serving-endpoints list`, `databricks database list-database-instances`, `databricks api get /api/2.0/genie/spaces` against the deployment profile.
+
+## Semantic layer and Agent Bricks jobs (added 2026-10-13)
+
+| Job | Last result | Run date |
+|---|---|---|
+| Build — semantic layer: UC metric views (gen2) | SUCCESS | 2026-10-13 |
+| Build — Agent Bricks: governance KA + pricing supervisor (gen2) | SUCCESS | 2026-10-13 |
+
+| Agent Bricks resource | Endpoint | State |
+|---|---|---|
+| Knowledge Assistant: Bricksurance Model Governance Assistant (gen2) | `ka-075c42a7-endpoint` | READY |
+| Supervisor Agent: Bricksurance Pricing Supervisor (gen2) | `mas-041c7524-endpoint` | READY |

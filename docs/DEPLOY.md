@@ -1,7 +1,7 @@
 # Pricing Workbench gen2 — deploy runbook
 
 > **This is the gen2 deploy doc.** gen2 lives on the `pricingv2` FEVM workspace
-> alongside the frozen v2 client deployment, uses schema `pricing_workbench_gen2`,
+> alongside the frozen v2 deployment, uses schema `pricing_workbench_gen2`,
 > app `pricing-workbench-gen2`, and is deployed from the `wryszka/pricing-workbench-gen2`
 > repo (`main` branch). Do not follow the old v2 runbook for this codebase.
 

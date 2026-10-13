@@ -144,9 +144,20 @@ resources:
           run_job_task:
             job_id: ${resources.jobs.optimisation_full.id}
 
+        # --- Semantic layer: UC metric views (skips optimisation views when the
+        # spine is gated off; ALL_DONE so a skipped optimisation doesn't block it) ---
+        - task_key: metric_views
+          depends_on:
+            - { task_key: build_upt }
+            - { task_key: motor_upt }
+            - { task_key: optimisation }
+          run_if: ALL_DONE
+          run_job_task:
+            job_id: ${resources.jobs.build_metric_views.id}
+
         # --- AI/BI assets: Genie spaces + mart dashboard (scripted from JSON) ---
         - task_key: ai_assets
-          depends_on: [{ task_key: build_upt }]
+          depends_on: [{ task_key: build_upt }, { task_key: metric_views }]
           run_job_task:
             job_id: ${resources.jobs.create_ai_assets.id}
 
@@ -157,6 +168,18 @@ resources:
           depends_on: [{ task_key: aliases }, { task_key: supporting_tables }]
           run_job_task:
             job_id: ${resources.jobs.generate_governance_packs.id}
+
+        # --- Agent Bricks: governance Knowledge Assistant + pricing Supervisor.
+        # Needs the governance packs (KA source), the Genie spaces over the metric
+        # views and the optimisation spine's explain_price UC function. ---
+        - task_key: agent_bricks
+          depends_on:
+            - { task_key: governance_packs }
+            - { task_key: ai_assets }
+            - { task_key: optimisation }
+          run_if: ALL_DONE
+          run_job_task:
+            job_id: ${resources.jobs.agent_bricks_setup.id}
 
         # --- app-SP grants (endpoints must exist) then metadata + tags ---
         - task_key: grant_app_sp
